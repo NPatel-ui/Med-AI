@@ -19,7 +19,7 @@ Dataset:
 
 Format: Excel (Dataset.xlsx)
 
-Features: 15 symptoms as input features
+Features: 20 symptoms as input features
 
 Target: Disease labels (Malaria, Dengue, Food Poisoning, Jaundice)
 
