@@ -24,6 +24,7 @@ import {
  * - Updated: Complete UI/UX redesign with Glassmorphism, animations, and modern aesthetics.
  * - Logic: Unchanged (Firebase, State, API calls remain exactly as before).
  */
+const API_BASE = import.meta.env.VITE_API_URL || https://med-ai-1-is35.onrender.com;
 
 // --- FIREBASE INIT (SECURE) ---
 let firebaseConfig = {};
