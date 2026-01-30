@@ -1,9 +1,11 @@
 fastapi
 uvicorn
 pydantic
+python-dotenv
+joblib
+google-generativeai
+firebase-admin
+scikit-learn
 numpy
 pandas
-scikit-learn
-joblib
-python-dotenv
 python-multipart
