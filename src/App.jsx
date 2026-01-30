@@ -206,11 +206,15 @@ export default function App() {
         if (screen !== 'forgot-password') setScreen("login");
       }
     });
+      fetch(`${API_BASE}/symptoms`)
+  .then(res => res.json())
+  .then(data => {
+    console.log("Symptoms from backend:", data);
+    setSymptoms(Array.isArray(data) ? data : fallbackSymptoms);
+  })
+  .catch(() => setSymptoms(fallbackSymptoms));
 
-    fetch("http://127.0.0.1:8000/symptoms")
-      .then(res => res.json())
-      .then(data => setSymptoms(data.symptoms || fallbackSymptoms))
-      .catch(() => setSymptoms(fallbackSymptoms));
+   
 
     return () => unsubscribe();
   }, [screen]);
