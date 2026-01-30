@@ -217,7 +217,7 @@ export default function App() {
    
 
     return () => unsubscribe();
-  }, [screen]);
+  }, []);
 
   // Clear notification after 3 seconds
   useEffect(() => {
