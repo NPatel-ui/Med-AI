@@ -1357,5 +1357,52 @@ input:focus, select:focus {
   .dock-stats { width: 100%; text-align: center; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
   .dock-btns { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
 }
+  .photo-upload-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.photo-label {
+  cursor: pointer;
+  display: block;
+}
+
+.photo-preview-box {
+  width: 120px;       /* Fixed width */
+  height: 120px;      /* Fixed height */
+  border-radius: 50%; /* Makes it a perfect circle */
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;   /* CRITICAL: Cuts off any part of the image outside the circle */
+  transition: 0.3s;
+}
+
+.photo-preview-box:hover {
+  border-color: #22d3ee;
+  background: rgba(34, 211, 238, 0.1);
+}
+
+.photo-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;  /* CRITICAL: Scales image to fill box without stretching */
+}
+
+.photo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #94a3b8;
+  gap: 5px;
+  font-size: 0.8rem;
+}
+
+.hidden-input {
+  display: none;
+}
 `;
 
