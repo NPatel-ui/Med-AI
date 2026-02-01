@@ -1272,6 +1272,36 @@ input:focus, select:focus {
   .brand .main-logo { font-size: 1.2rem; }
   .user-indicator { width: 36px; height: 36px; }
 
+  .otp-overlay {
+    padding: 0 !important;
+    align-items: flex-start !important; /* Start from top */
+  }
+
+  .modal-card {
+    width: 100% !important;
+    height: 100vh !important;       /* Full height */
+    max-width: none !important;     /* Remove width limits */
+    max-height: none !important;    /* Remove height limits */
+    border-radius: 0 !important;    /* Remove rounded corners */
+    background: #0B1120 !important; /* Solid background (no glass transparency) */
+    border: none !important;
+    padding: 24px !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Fix the close button position for full screen */
+  .close-btn {
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .main-stage { padding: 90px 15px 120px; }
 
   /* Stack Grids */
@@ -1281,7 +1311,13 @@ input:focus, select:focus {
   .hero-actions button { width: 100%; }
   
   /* Show history on mobile */
-  .history-sidebar { height: auto; max-height: 400px; margin-top: 30px; display: block; } 
+  .history-sidebar { 
+    display: flex;           /* CHANGED from block to flex */
+    flex-direction: column;  /* Keeps header at top, list below */
+    width: 100%; 
+    height: 400px;           /* Fixed height ensures scrolling happens inside */
+    margin-top: 30px; 
+  }
   .history-item { justify-content: space-between; }
   
   /* Profile Page Stacking */
