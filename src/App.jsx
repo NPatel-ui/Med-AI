@@ -209,10 +209,11 @@ export default function App() {
       fetch(`${API_BASE}/symptoms`)
   .then(res => res.json())
   // NEW FIXED CODE
+// ... inside your useEffect ...
 .then(data => {
   console.log("Symptoms from backend:", data);
   // Check if data.symptoms exists and use it; otherwise use data if it's already an array
-  const validData = data.symptoms || data; 
+  const validData = data.symptoms || data;  // <--- THE FIX IS HERE
   setSymptoms(Array.isArray(validData) ? validData : fallbackSymptoms);
 })
   .catch(() => setSymptoms(fallbackSymptoms));
