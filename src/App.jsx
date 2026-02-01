@@ -307,8 +307,17 @@ export default function App() {
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Check if file is larger than 1MB (1,048,576 bytes)
+      if (file.size > 1000000) {
+        setError("Photo is too large. Please upload an image smaller than 1MB.");
+        return;
+      }
+
       const reader = new FileReader();
-      reader.onloadend = () => setUserProfile(prev => ({ ...prev, photo: reader.result }));
+      reader.onloadend = () => {
+        setUserProfile(prev => ({ ...prev, photo: reader.result }));
+        setError(null); // Clear any previous errors
+      };
       reader.readAsDataURL(file);
     }
   };
