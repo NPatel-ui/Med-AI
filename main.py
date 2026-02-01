@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 import joblib
 import os
+import json
 import random
 import string
 import smtplib
@@ -20,18 +21,33 @@ load_dotenv()
 # ================= PATH SETUP =================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ================= FIREBASE INIT =================
+# ================= FIREBASE INIT (UPDATED FOR DEPLOYMENT) =================
 db = None
 try:
+    # Option 1: Try to load from a local file (Development)
     FIREBASE_KEY_PATH = os.path.join(BASE_DIR, "firebase_key.json")
+    
+    cred = None
+    
     if os.path.exists(FIREBASE_KEY_PATH):
+        print("📂 Loading Firebase from local JSON file...")
+        cred = credentials.Certificate(FIREBASE_KEY_PATH)
+    
+    # Option 2: Load from Environment Variable (Deployment - Render/Vercel)
+    # You must paste the content of firebase_key.json into an env var named FIREBASE_CREDENTIALS
+    elif os.getenv("FIREBASE_CREDENTIALS"):
+        print("☁️ Loading Firebase from Environment Variable...")
+        creds_json = json.loads(os.getenv("FIREBASE_CREDENTIALS"))
+        cred = credentials.Certificate(creds_json)
+        
+    if cred:
         if not firebase_admin._apps:
-            cred = credentials.Certificate(FIREBASE_KEY_PATH)
             firebase_admin.initialize_app(cred)
         db = firestore.client()
         print("✅ Firebase Admin initialized successfully.")
     else:
-        print("⚠️ firebase_key.json not found. Backend DB writes disabled.")
+        print("⚠️ No Firebase keys found. Database writes will fail.")
+
 except Exception as e:
     print(f"⚠️ Firebase Init Error: {e}")
 
@@ -67,7 +83,7 @@ def send_real_email(to_email: str, otp_code: str):
     msg['To'] = to_email
 
     try:
-        # Connect to Gmail's TLS port (587) which is often more reliable than 465
+        # Connect to Gmail's TLS port (587)
         with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
             smtp.ehlo()
             smtp.starttls()
@@ -77,7 +93,6 @@ def send_real_email(to_email: str, otp_code: str):
         print(f"✅ Email sent successfully to {to_email}")
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
-        # Fallback to console print if email fails, so you can still test
         print(f"📧 [FALLBACK] OTP for {to_email}: {otp_code}")
 
 # ================= MODEL PATHS =================
@@ -107,13 +122,25 @@ except Exception as e:
 # ================= FASTAPI APP =================
 app = FastAPI(title="Med-AI Backend")
 
+# Define allowed origins (Update this with your Vercel frontend URL after deployment)
+origins = [
+    "http://localhost:5173",  # Local React
+    "https://your-frontend-app.vercel.app", # REPLACE THIS later
+    "*" # Keep this for now for easy testing
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ================= ROOT ENDPOINT (Vital for Health Checks) =================
+@app.get("/")
+def home():
+    return {"message": "Med-AI Backend is Running!", "status": "Active"}
 
 # ================= REQUEST SCHEMAS =================
 class PredictRequest(BaseModel):
@@ -134,6 +161,7 @@ class ResetPasswordRequest(BaseModel):
     new_password: str
 
 # ================= PRECAUTION TAGS =================
+# ... (Keep your PRECAUTION_TAGS dictionary exactly as it was) ...
 PRECAUTION_TAGS = {
     "Common Cold": ["rest", "hydration", "avoid_cold_exposure"],
     "Influenza": ["rest", "hydration", "monitor_fever"],
@@ -199,11 +227,9 @@ def send_otp(req: OTPRequest):
     if not db:
         raise HTTPException(status_code=503, detail="Database not initialized")
     
-    # Generate OTP
     otp = ''.join(random.choices(string.digits, k=6))
     
     try:
-        # Save to DB
         db.collection("otps").document(req.email).set({
             "otp": otp,
             "created_at": datetime.utcnow(),
@@ -211,7 +237,6 @@ def send_otp(req: OTPRequest):
             "type": req.type
         })
         
-        # SEND REAL EMAIL
         send_real_email(req.email, otp)
         
         return {"message": "OTP sent successfully"}
@@ -234,7 +259,7 @@ def verify_otp(req: OTPVerifyRequest):
     if data['otp'] != req.otp:
         raise HTTPException(status_code=400, detail="Invalid OTP code")
         
-    doc_ref.delete() # Consume OTP
+    doc_ref.delete()
     return {"message": "OTP Verified"}
 
 @app.post("/auth/reset-password")
@@ -242,8 +267,6 @@ def reset_password(req: ResetPasswordRequest):
     if not db:
         raise HTTPException(status_code=503, detail="Database not initialized")
     
-    # In a real production app, verify-otp should return a secure token
-    # For this implementation, we trust the immediate call if logic on frontend is secure
     try:
         user = auth.get_user_by_email(req.email)
         auth.update_user(user.uid, password=req.new_password)
