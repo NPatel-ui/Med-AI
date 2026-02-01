@@ -125,7 +125,7 @@ app = FastAPI(title="Med-AI Backend")
 # Define allowed origins (Update this with your Vercel frontend URL after deployment)
 origins = [
     "http://localhost:5173",  # Local React
-    "https://your-frontend-app.vercel.app", # REPLACE THIS later
+    "https://med-ai-main.vercel.app/", # REPLACE THIS later
     "*" # Keep this for now for easy testing
 ]
 
@@ -331,3 +331,4 @@ def health():
         "firebase": db is not None,
         "email_service": SMTP_EMAIL is not None
     }
+
