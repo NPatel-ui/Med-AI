@@ -208,10 +208,13 @@ export default function App() {
     });
       fetch(`${API_BASE}/symptoms`)
   .then(res => res.json())
-  .then(data => {
-    console.log("Symptoms from backend:", data);
-    setSymptoms(Array.isArray(data) ? data : fallbackSymptoms);
-  })
+  // NEW FIXED CODE
+.then(data => {
+  console.log("Symptoms from backend:", data);
+  // Check if data.symptoms exists and use it; otherwise use data if it's already an array
+  const validData = data.symptoms || data; 
+  setSymptoms(Array.isArray(validData) ? validData : fallbackSymptoms);
+})
   .catch(() => setSymptoms(fallbackSymptoms));
 
    
