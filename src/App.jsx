@@ -1273,35 +1273,48 @@ input:focus, select:focus {
   .user-indicator { width: 36px; height: 36px; }
 
   .otp-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: #0B1120 !important; /* Solid background, hiding the app behind it */
+    z-index: 99999 !important;      /* Maximum priority */
     padding: 0 !important;
+    display: flex !important;
     align-items: flex-start !important; /* Start from top */
+    overflow-y: auto !important;    /* Allow scrolling within the overlay */
   }
 
+  /* 2. Make the card fill that space completely */
   .modal-card {
     width: 100% !important;
-    height: 100vh !important;       /* Full height */
-    max-width: none !important;     /* Remove width limits */
-    max-height: none !important;    /* Remove height limits */
-    border-radius: 0 !important;    /* Remove rounded corners */
-    background: #0B1120 !important; /* Solid background (no glass transparency) */
+    min-height: 100vh !important;   /* Force full height */
+    max-width: none !important;
+    max-height: none !important;
+    border-radius: 0 !important;    /* No corners looks like a full page */
     border: none !important;
-    padding: 24px !important;
-    display: flex;
-    flex-direction: column;
+    background: transparent !important; /* Background is handled by overlay now */
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 20px !important;
   }
 
-  /* Fix the close button position for full screen */
+  /* 3. Ensure the close button is easily clickable at the top right */
   .close-btn {
-    padding: 10px;
+    position: absolute;
+    top: 20px;
+    right: 20px;
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
     width: 40px;
     height: 40px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 100000 !important;
   }
-
+  
   .main-stage { padding: 90px 15px 120px; }
 
   /* Stack Grids */
