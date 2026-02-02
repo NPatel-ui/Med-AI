@@ -226,6 +226,13 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [notification]);
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+  
 
   // --- FIRESTORE HELPERS ---
   const fetchUserData = async (uid, email) => {
@@ -548,6 +555,7 @@ It is not a medical diagnosis. Consult a healthcare professional immediately.
       <div className="ambient-orb orb-2"></div>
       
       {notification && <div className="notification-toast">{notification}</div>}
+      {error && <div className="error-toast">{error}</div>}
 
       {/* History Details Modal */}
       {viewingHistoryItem && (
@@ -1032,6 +1040,23 @@ body { margin: 0; overflow-x: hidden; background: var(--bg-dark); }
   z-index: 3000; 
   font-weight: 600; 
   box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+  white-space: nowrap;
+}
+
+/* --- PASTE THIS INSIDE YOUR CSS CONSTANT --- */
+
+.error-toast { 
+  position: fixed; 
+  top: 20px; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  background: #EF4444; /* RED COLOR */
+  color: white; 
+  padding: 12px 24px; 
+  border-radius: 50px; 
+  z-index: 9999; 
+  font-weight: 600; 
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
   white-space: nowrap;
 }
 
