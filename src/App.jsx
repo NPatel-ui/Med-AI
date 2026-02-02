@@ -414,13 +414,18 @@ export default function App() {
       setNotification("Password changed successfully!");
       setPasswordChange({ current: "", new: "" });
     } catch (err) {
-      if (err.code === 'auth/wrong-password') {
-        setError("Current password is incorrect.");
-      } else {
-        setError("Failed to change password: " + err.message);
-      }
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+      setError("Wrong current password entered."); // <--- Custom Red Message
+    } else if (err.code === 'auth/weak-password') {
+      setError("Password should be at least 6 characters.");
+    } else if (err.code === 'auth/too-many-requests') {
+      setError("Too many failed attempts. Please try again later.");
+    } else {
+      setError("Failed to update password. Please try again.");
     }
-  };
+    // ----------------------
+  }
+};
 
   const handleLogout = async () => {
     try {
@@ -1304,28 +1309,6 @@ input:focus, select:focus {
   .nav-container { padding: 10px 15px; }
   .brand .main-logo { font-size: 1.2rem; }
   .user-indicator { width: 36px; height: 36px; }
-
-  .results-grid, .results-container {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 24px !important;  /* Adds big space between the main blocks */
-    height: auto !important;
-  }
-
-  /* 2. Fix Individual Cards (Alternatives & Guidance) */
-  .result-card, .prediction-card, .precautions-container {
-    margin-bottom: 20px !important; /* Pushes the next card down */
-    height: auto !important;        /* Let card grow if text is long */
-    min-height: 150px !important;   /* Ensure they aren't too small */
-    position: relative !important;  /* Resets overlapping positioning */
-    top: auto !important;           /* preventing 'absolute' positioning bugs */
-  }
-
-  /* 3. Fix the "Guidance Protocols" specifically */
-  .precautions-container {
-    margin-top: 30px !important;    /* Extra space above the yellow lock section */
-    padding-top: 20px !important;
-  }
 
   .otp-overlay {
     position: fixed !important;
