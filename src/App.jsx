@@ -209,16 +209,15 @@ export default function App() {
       fetch(`${API_BASE}/symptoms`)
   .then(res => res.json())
   .then(data => {
-    console.log("Symptoms from backend:", data);
-    setSymptoms(Array.isArray(data) ? data : fallbackSymptoms);
-  })
-  .catch(() => setSymptoms(fallbackSymptoms));
-
-   
+    const validData = data.symptoms || data; 
+        
+        setSymptoms(Array.isArray(validData) ? validData : fallbackSymptoms);
+      })
+      .catch(() => setSymptoms(fallbackSymptoms));
+    // ---------------------------------------------
 
     return () => unsubscribe();
   }, []);
-
   // Clear notification after 3 seconds
   useEffect(() => {
     if (notification) {
@@ -1305,15 +1304,6 @@ input:focus, select:focus {
   .nav-container { padding: 10px 15px; }
   .brand .main-logo { font-size: 1.2rem; }
   .user-indicator { width: 36px; height: 36px; }
-
-  .notification-toast, .error-toast {
-    width: 90% !important;           /* Limit width to 90% of screen */
-    white-space: normal !important;  /* Allow text to wrap to multiple lines */
-    text-align: center !important;   /* Center the text */
-    border-radius: 16px !important;  /* Adjust rounded corners for boxy look */
-    left: 50% !important;            /* Keep centered */
-    transform: translateX(-50%) !important;
-  }
 
   .otp-overlay {
     position: fixed !important;
