@@ -1305,6 +1305,28 @@ input:focus, select:focus {
   .brand .main-logo { font-size: 1.2rem; }
   .user-indicator { width: 36px; height: 36px; }
 
+  .results-grid, .results-container {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 24px !important;  /* Adds big space between the main blocks */
+    height: auto !important;
+  }
+
+  /* 2. Fix Individual Cards (Alternatives & Guidance) */
+  .result-card, .prediction-card, .precautions-container {
+    margin-bottom: 20px !important; /* Pushes the next card down */
+    height: auto !important;        /* Let card grow if text is long */
+    min-height: 150px !important;   /* Ensure they aren't too small */
+    position: relative !important;  /* Resets overlapping positioning */
+    top: auto !important;           /* preventing 'absolute' positioning bugs */
+  }
+
+  /* 3. Fix the "Guidance Protocols" specifically */
+  .precautions-container {
+    margin-top: 30px !important;    /* Extra space above the yellow lock section */
+    padding-top: 20px !important;
+  }
+
   .otp-overlay {
     position: fixed !important;
     top: 0 !important;
