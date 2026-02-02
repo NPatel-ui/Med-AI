@@ -1306,6 +1306,15 @@ input:focus, select:focus {
   .brand .main-logo { font-size: 1.2rem; }
   .user-indicator { width: 36px; height: 36px; }
 
+  .notification-toast, .error-toast {
+    width: 90% !important;           /* Limit width to 90% of screen */
+    white-space: normal !important;  /* Allow text to wrap to multiple lines */
+    text-align: center !important;   /* Center the text */
+    border-radius: 16px !important;  /* Adjust rounded corners for boxy look */
+    left: 50% !important;            /* Keep centered */
+    transform: translateX(-50%) !important;
+  }
+
   .otp-overlay {
     position: fixed !important;
     top: 0 !important;
