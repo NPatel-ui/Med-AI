@@ -899,21 +899,38 @@ It is not a medical diagnosis. Consult a healthcare professional immediately.
                   <span>{s.replace(/_/g, " ")}</span>
                 </div>
               ))}
+              
+              {/* FIX FOR OVERLAP: Invisible spacer so you can scroll to the very bottom */}
+              <div style={{ height: "100px", width: "100%" }}></div> 
             </div>
 
-            <div className="floating-dock glass-card">
-              <div className="dock-stats">
-                <span className="count">{Object.values(selectedSymptoms).filter(Boolean).length}</span>
-                <span className="label">Biomarkers</span>
+            {/* THE STATIC ACTION BAR (Placed correctly) */}
+            {Object.values(selectedSymptoms).filter(Boolean).length > 0 && (
+              <div className="action-bar-static">
+                <div className="dock-stats">
+                  <span className="count">
+                    {Object.values(selectedSymptoms).filter(Boolean).length}
+                  </span>
+                  <span className="label">Biomarkers</span>
+                </div>
+
+                <div className="dock-btns">
+                  <button className="btn-secondary" onClick={() => setSelectedSymptoms({})}>
+                    Cancel
+                  </button>
+                  <button 
+              className="primary-button" 
+              onClick={analyzeSymptoms}
+              style={{ width: 'auto', padding: '0 40px' }}  
+            >
+              Analyze Patterns
+            </button>
+                </div>
               </div>
-              <div className="dock-btns">
-                <button className="btn-secondary" onClick={() => setScreen("home")}>Cancel</button>
-                <button className="btn-action glow-effect" onClick={analyzeSymptoms}>Analyze Patterns</button>
-              </div>
-            </div>
-          </div>
+            )}
+
+          </div> 
         )}
-
         {/* LOADING SCREEN */}
         {screen === "loading" && (
           <div className="loading-state anim-fade-in">
@@ -1175,6 +1192,39 @@ input:focus, select:focus {
 }
 .text-link { background: none; border: none; color: var(--primary); font-weight: 600; cursor: pointer; }
 .footer-text { color: var(--text-muted); font-size: 0.9rem; margin-right: 8px; }
+
+.action-bar-static {
+  margin-top: 40px;
+  margin-bottom: 60px;
+  display: flex !important;
+  justify-content: space-between !important; /* Spreads them out */
+  align-items: center !important;
+  
+  /* Glass style */
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  padding: 16px 24px;
+  border-radius: 50px;
+  width: 90%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.dock-btns {
+  display: flex !important;
+  gap: 15px !important;
+  width: auto !important; /* Let buttons determine width */
+}
+
+/* This fixes the missing button */
+.btn-compact {
+  width: auto !important;
+  min-width: 150px !important; /* Forces it to have width */
+  padding: 12px 24px !important;
+  white-space: nowrap !important;
+}
 
 /* --- PROFILE GRID --- */
 .profile-grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
@@ -1443,4 +1493,3 @@ input:focus, select:focus {
   display: none;
 }
 `;
-
