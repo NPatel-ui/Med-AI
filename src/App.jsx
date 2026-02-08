@@ -1090,6 +1090,33 @@ body { margin: 0; overflow-x: hidden; background: var(--bg-dark); }
   border-radius: 24px;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
+  /* --- UNIVERSAL CENTER POPUP (Fixes Desktop) --- */
+.otp-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85); /* Dark background */
+  z-index: 10000;
+  
+  /* This centers the card specifically */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(5px); /* Nice blur effect */
+}
+
+/* Ensure the card looks good on desktop */
+.modal-card {
+  position: relative;
+  width: 90%;
+  max-width: 600px; /* Limits width on big screens */
+  max-height: 90vh; /* Prevents it from being too tall */
+  overflow-y: auto; /* Scroll inside the card if needed */
+  margin: 0 auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
 
 /* --- NAVIGATION --- */
 .top-nav {
