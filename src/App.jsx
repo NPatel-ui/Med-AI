@@ -905,29 +905,39 @@ It is not a medical diagnosis. Consult a healthcare professional immediately.
             </div>
 
             {/* THE STATIC ACTION BAR (Placed correctly) */}
-            {Object.values(selectedSymptoms).filter(Boolean).length > 0 && (
-              <div className="action-bar-static">
-                <div className="dock-stats">
-                  <span className="count">
-                    {Object.values(selectedSymptoms).filter(Boolean).length}
-                  </span>
-                  <span className="label">Biomarkers</span>
-                </div>
+            {/* --- NEW LAYOUT: CANCEL | COUNT | ANALYZE --- */}
+      {Object.values(selectedSymptoms).filter(Boolean).length > 0 && (
+        <div className="action-bar-static" style={{justifyContent: 'space-between'}}>
+          
+          {/* 1. LEFT: Cancel Button */}
+          <button 
+            className="btn-secondary" 
+            onClick={() => setSelectedSymptoms({})}
+            style={{padding: '10px 20px', border: 'none', color: '#94a3b8'}}
+          >
+            Cancel
+          </button>
 
-                <div className="dock-btns">
-                  <button className="btn-secondary" onClick={() => setSelectedSymptoms({})}>
-                    Cancel
-                  </button>
-                  <button 
-              className="primary-button" 
-              onClick={analyzeSymptoms}
-              style={{ width: 'auto', padding: '0 40px' }}  
-            >
-              Analyze Patterns
-            </button>
-                </div>
-              </div>
-            )}
+          {/* 2. CENTER: The Counter */}
+          <div className="dock-stats" style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+            <span className="count" style={{fontSize: '1.5rem', fontWeight: '800', lineHeight: '1'}}>
+              {Object.values(selectedSymptoms).filter(Boolean).length}
+            </span>
+            <span className="label" style={{fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.7}}>
+              Selected
+            </span>
+          </div>
+
+          {/* 3. RIGHT: Analyze Button */}
+          <button 
+            className="primary-button btn-compact" 
+            onClick={analyzeSymptoms}
+          >
+            Analyze
+          </button>
+
+        </div>
+      )}
 
           </div> 
         )}
@@ -1220,12 +1230,53 @@ input:focus, select:focus {
 .text-link { background: none; border: none; color: var(--primary); font-weight: 600; cursor: pointer; }
 .footer-text { color: var(--text-muted); font-size: 0.9rem; margin-right: 8px; }
 
+/* --- COMPACT ACTION CAPSULE (Fixes Wide Desktop) --- */
 .action-bar-static {
-  margin-top: 40px;
-  margin-bottom: 60px;
+  /* Sizing & Positioning */
+  width: 90%;              /* Fits mobile nicely */
+  max-width: 480px;        /* STOPS it from stretching on Desktop */
+  margin: 40px auto 60px;  /* Centers it horizontally */
+  
+  /* Layout */
   display: flex !important;
-  justify-content: space-between !important; /* Spreads them out */
+  justify-content: space-between !important;
   align-items: center !important;
+  gap: 12px;
+
+  /* Glass/Capsule Styling */
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 100px;    /* Makes it fully rounded */
+  padding: 10px 14px;      /* Compact padding */
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5); /* Nice floating shadow */
+}
+
+/* Cancel Button Hover Effect */
+.btn-ghost {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: 0.2s;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+/* Stats Counter */
+.capsule-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
   
   /* Glass style */
   background: rgba(15, 23, 42, 0.9);
