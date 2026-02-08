@@ -1570,29 +1570,38 @@ input:focus, select:focus {
 .hidden-input {
   display: none;
 }
- .action-bar-static {
-    width: 96% !important;       
-    padding: 8px 8px !important; /* Less padding inside the bar */
-    gap: 6px !important;         /* Smaller gap between items */
+action-bar-static {
+    width: 98% !important;       
+    max-width: none !important;
+    padding: 6px 4px !important; /* Almost zero padding on sides */
+    gap: 2px !important;         /* Tiny gap between items */
+    bottom: 20px !important;     /* Keep it slightly above bottom edge */
   }
 
-  /* 2. Shrink the 'Cancel' button */
+  /* 2. Shrink 'Cancel' to bare minimum */
   .btn-ghost {
-    padding: 6px 12px !important;
-    font-size: 0.8rem !important;
+    padding: 6px 8px !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0 !important;
   }
 
-  /* 3. Shrink the 'Analyze' button (CRITICAL FIX) */
+  /* 3. Aggressively shrink 'Analyze' button */
   .primary-button {
-    padding: 8px 16px !important; /* Overrides the large inline padding */
-    font-size: 0.85rem !important;
-    min-width: auto !important;
-    white-space: nowrap !important; /* Keeps text on one line */
+    padding: 8px 12px !important;  /* Very tight padding */
+    font-size: 0.8rem !important;
+    min-width: 0 !important;       /* Allow it to shrink */
+    width: auto !important;
+    white-space: nowrap !important;
+    letter-spacing: 0 !important;
   }
   
-  /* 4. Resize the Counter */
+  /* 4. Shrink the Counter in the middle */
   .capsule-stats span:first-child {
-    font-size: 1.2rem !important;
+    font-size: 1rem !important;
+  }
+  .capsule-stats span:last-child {
+    font-size: 0.5rem !important;
+    letter-spacing: 0 !important;
   }
 }
 `;
