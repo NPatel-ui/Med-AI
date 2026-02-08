@@ -1492,4 +1492,21 @@ input:focus, select:focus {
 .hidden-input {
   display: none;
 }
+  .action-bar-static {
+     width: 95% !important;      /* Use more of the screen width */
+     padding: 10px 15px !important; /* Reduce padding inside the bar */
+  }
+
+  .dock-btns {
+     gap: 8px !important;        /* Bring buttons closer together */
+  }
+
+  /* Make the analyze button responsive on phone */
+  .btn-compact {
+     min-width: 0 !important;    /* CRITICAL: Remove the rigid 150px width */
+     width: auto !important;     /* Let it shrink to fit text */
+     padding: 10px 16px !important; /* Smaller button padding */
+     font-size: 0.9rem !important;  /* Slightly smaller text */
+  }
+}
 `;
