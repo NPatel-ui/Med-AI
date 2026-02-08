@@ -1570,21 +1570,29 @@ input:focus, select:focus {
 .hidden-input {
   display: none;
 }
-  .action-bar-static {
-     width: 95% !important;      /* Use more of the screen width */
-     padding: 10px 15px !important; /* Reduce padding inside the bar */
+ .action-bar-static {
+    width: 96% !important;       
+    padding: 8px 8px !important; /* Less padding inside the bar */
+    gap: 6px !important;         /* Smaller gap between items */
   }
 
-  .dock-btns {
-     gap: 8px !important;        /* Bring buttons closer together */
+  /* 2. Shrink the 'Cancel' button */
+  .btn-ghost {
+    padding: 6px 12px !important;
+    font-size: 0.8rem !important;
   }
 
-  /* Make the analyze button responsive on phone */
-  .btn-compact {
-     min-width: 0 !important;    /* CRITICAL: Remove the rigid 150px width */
-     width: auto !important;     /* Let it shrink to fit text */
-     padding: 10px 16px !important; /* Smaller button padding */
-     font-size: 0.9rem !important;  /* Slightly smaller text */
+  /* 3. Shrink the 'Analyze' button (CRITICAL FIX) */
+  .primary-button {
+    padding: 8px 16px !important; /* Overrides the large inline padding */
+    font-size: 0.85rem !important;
+    min-width: auto !important;
+    white-space: nowrap !important; /* Keeps text on one line */
+  }
+  
+  /* 4. Resize the Counter */
+  .capsule-stats span:first-child {
+    font-size: 1.2rem !important;
   }
 }
 `;
