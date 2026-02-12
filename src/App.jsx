@@ -848,7 +848,16 @@ It is not a medical diagnosis. Consult a healthcare professional immediately.
                 )}
 
                 <div className="hero-actions">
-                  <button className="primary-button lg glow-effect" onClick={() => setScreen("symptoms")}>Start New Assessment</button>
+                  <button 
+                    className="primary-button lg glow-effect" 
+                    onClick={() => {
+                      setSelectedSymptoms({});  // <--- CLEARS OLD SYMPTOMS
+                      setResults([]);           // <--- CLEARS OLD RESULTS
+                      setScreen("symptoms");    // <--- THEN GOES TO SCREEN
+                    }}
+                  >
+                    Start New Assessment
+                  </button>
                 </div>
               </div>
               
