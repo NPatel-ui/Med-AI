@@ -9,7 +9,8 @@ import {
   updatePassword,
   reauthenticateWithCredential,
   EmailAuthProvider,
-  updateEmail
+  updateEmail,
+  sendEmailVerification
 } from "firebase/auth";
 import { 
   getFirestore, 
@@ -333,16 +334,28 @@ export default function App() {
     e.preventDefault();
     setError(null);
     try {
-      await signInWithEmailAndPassword(auth, loginData.email, loginData.password);
+      // 1. Try to sign in
+      const userCredential = await signInWithEmailAndPassword(auth, loginData.email, loginData.password);
+      const user = userCredential.user;
+
+      // 2. CHECK IF VERIFIED
+      if (!user.emailVerified) {
+        await signOut(auth); // Kick them out if not verified
+        setError("Please verify your email before logging in.");
+        return;
+      }
+
+      // 3. If verified, proceed (The onAuthStateChanged listener handles the rest)
     } catch (err) {
       console.error(err);
-      setError("Invalid credentials. Please check your email and password.");
+      setError("Invalid credentials or internal error.");
     }
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setError(null);
+    setNotification(null); // Clear old messages
     
     const safeEmail = userProfile.email ? userProfile.email.trim() : "";
     
@@ -352,18 +365,26 @@ export default function App() {
     }
 
     try {
+        // 1. Create the user in Firebase
         const userCredential = await createUserWithEmailAndPassword(auth, safeEmail, userProfile.password);
-        const uid = userCredential.user.uid;
+        const user = userCredential.user;
         
+        // 2. Send Verification Email
+        await sendEmailVerification(user);
+
+        // 3. Save their profile to Database
         const { password, ...safeProfile } = userProfile;
         const profileToSave = { ...safeProfile, email: safeEmail };
         
-        await setDoc(doc(db, 'artifacts', appId, 'users', uid, 'profile', 'main'), profileToSave);
-        await setDoc(doc(db, 'artifacts', appId, 'users', uid, 'data', 'history'), { records: [] });
+        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'main'), profileToSave);
+        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'history'), { records: [] });
         
-        setIsNewUser(false);
-        setNotification("Account created! Please log in.");
+        // 4. Force Logout & Show Instruction
+        await signOut(auth);
+        setIsNewUser(false); // Switch back to Login screen
+        setNotification("Account created! Verification link sent to your email.");
         setUserProfile(prev => ({...prev, password: ""}));
+
     } catch (err) {
         console.error(err);
         setError(err.message || "Registration failed");
