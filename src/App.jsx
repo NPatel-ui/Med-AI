@@ -271,11 +271,10 @@ export default function App() {
         await setDoc(historyRef, { records: [] }).catch(() => {});
       }
     } catch (err) {
-      console.error("Error fetching user data:", err);
-      await signOut(auth);
-      setScreen("login");
-      setError("Connection interrupted. Please login again.");
-    }
+        // You will find the error here:
+        setError("Connection interrupted. Please login again.");
+        signOut(auth);
+      }
   };
 
   const calculateBMI = () => {
