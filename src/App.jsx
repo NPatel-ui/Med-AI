@@ -347,8 +347,8 @@ export default function App() {
 
       // 3. If verified, proceed (The onAuthStateChanged listener handles the rest)
     } catch (err) {
-      console.error(err);
-      setError("Invalid credentials or internal error.");
+      console.error("LOGIN ERROR:", err); // Prints details in your browser console
+      setError(err.message);              // Shows the REAL error in the red popup
     }
   };
 
