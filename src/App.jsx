@@ -385,7 +385,7 @@ export default function App() {
                 <div className={`sidebar-link ${screen === 'home' ? 'active' : ''}`} onClick={() => {setScreen('home'); setIsSidebarOpen(false);}}>
                   <Icons.Home size={20} /> Dashboard
                 </div>
-                <div className={`sidebar-link ${screen === 'symptoms' ? 'active' : ''}`} onClick={() => {setScreen('symptoms'); setIsSidebarOpen(false);}}>
+                <div className={`sidebar-link ${screen === 'symptoms' ? 'active' : ''}`} onClick={() => { setSelectedSymptoms({}); setResults([]); setSearchQuery(""); navigateTo('symptoms'); }}>
                   <Icons.Clipboard size={20} /> Assessment
                 </div>
                 <div className={`sidebar-link ${screen === 'history' || viewingHistoryItem ? 'active' : ''}`} onClick={() => {setScreen('history'); setIsSidebarOpen(false);}}>
@@ -554,7 +554,7 @@ export default function App() {
                 )}
 
                 <div className="action-cards-grid mb-4 desktop-col flex-grow">
-                  <div className="teal-action-card full-span" onClick={() => { setSelectedSymptoms({}); setResults([]); setScreen("symptoms"); }}>
+                  <div className="teal-action-card full-span" onClick={() => { setSelectedSymptoms({}); setResults([]); setSearchQuery(""); setScreen("symptoms"); }}>
                     <div className="card-content">
                       <div className="icon-bubble"><Icons.Clipboard size={20} className="teal-icon" /></div>
                       <div>
@@ -829,14 +829,16 @@ export default function App() {
                 </div>
 
                 <h4 style={{marginBottom: '16px', fontSize: '1rem', color: 'var(--text-dark)'}}>Top 3 Predictions</h4>
-                <div className="disease-list-horizontal mt-2">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
                 {(viewingHistoryItem.allPredictions || [viewingHistoryItem.topMatch]).slice(0, 3).map((r, i) => (
-                    <div key={i} className="disease-item-horizontal">
-                      <div className="rank-circle">{i + 1}</div>
-                      <div className="disease-info">
-                        <h4 className="m-0 text-md">{r}</h4>
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: '16px', background: '#fafafa', border: '1px solid var(--border-light)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--danger-light)', color: 'var(--danger-red)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.1rem' }}>
+                          {i + 1}
+                        </div>
+                        <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-dark)', fontWeight: 700 }}>{r}</h4>
                       </div>
-                      <div className="text-2xl">🦠</div>
+                      <div style={{ fontSize: '1.5rem' }}>🦠</div>
                     </div>
                 ))}
               </div>
@@ -889,14 +891,16 @@ export default function App() {
               </div>
               
               {/* Beautifully Styled Disease Cards */}
-              <div className="disease-list-horizontal">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' }}>
                 {results.slice(0, 3).map((r, i) => (
-                    <div key={i} className="disease-item-horizontal">
-                      <div className="rank-circle">{i + 1}</div>
-                      <div className="disease-info">
-                        <h4 className="m-0 text-md">{r}</h4>
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: '16px', background: '#fafafa', border: '1px solid var(--border-light)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--danger-light)', color: 'var(--danger-red)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.1rem' }}>
+                          {i + 1}
+                        </div>
+                        <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-dark)', fontWeight: 700 }}>{r}</h4>
                       </div>
-                      <div className="text-2xl">🦠</div>
+                      <div style={{ fontSize: '1.5rem' }}>🦠</div>
                     </div>
                 ))}
               </div>
@@ -916,11 +920,12 @@ export default function App() {
               </div>
 
               {/* Buttons */}
-              <div data-html2canvas-ignore="true" style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' }}>
-                <button className="btn-outline-teal full-width" onClick={exportReport} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+              <div data-html2canvas-ignore="true" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '30px', flexWrap: 'wrap' }}>
+                <button className="btn-outline-teal" onClick={exportReport} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', width: 'auto', padding: '14px 30px', minWidth: '220px' }}>
                   <Icons.Download size={20} /> Export Report
                 </button>
-                <button className="btn-teal-primary full-width" onClick={() => setScreen("home")}>
+                
+                <button className="btn-teal-primary" onClick={() => { setSelectedSymptoms({}); setScreen("home"); }} style={{ width: 'auto', padding: '14px 30px', minWidth: '220px' }}>
                   Return to Dashboard
                 </button>
               </div>
@@ -939,7 +944,7 @@ export default function App() {
               <Icons.Home />
               <span>Home</span>
             </div>
-            <div className={`nav-item ${screen === "symptoms" ? "active" : ""}`} onClick={() => setScreen("symptoms")}>
+            <div className={`nav-item ${screen === "symptoms" ? "active" : ""}`} onClick={() => { setSelectedSymptoms({}); setResults([]); setSearchQuery(""); navigateTo("symptoms"); }}>
               <Icons.Clipboard />
               <span>Assessment</span>
             </div>
