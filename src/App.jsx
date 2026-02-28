@@ -283,7 +283,12 @@ export default function App() {
   async function analyzeSymptoms() {
     setError(null);
     const selected = Object.keys(selectedSymptoms).filter(s => selectedSymptoms[s]);
-    if (selected.length === 0) return;
+    
+    // Safety check: Don't run if no symptoms are selected
+    if (selected.length === 0) {
+      setError("Please select at least one symptom.");
+      return; 
+    }
     
     setScreen("loading");
     const controller = new AbortController();
@@ -297,17 +302,41 @@ export default function App() {
         signal: controller.signal
       });
       clearTimeout(timeoutId);
-      if (!res.ok) throw new Error("Server error");
+      
+      if (!res.ok) throw new Error(`Server returned status: ${res.status}`);
       
       const data = await res.json();
-      const predictions = data.predictions || [];
+      console.log("🟢 BACKEND DATA RECEIVED:", data); // For debugging in your browser console
+
+      // --- BULLETPROOF DATA SANITIZATION ---
+      // 1. Force predictions to be a safe Array of Strings
+      let safePredictions = [];
+      if (Array.isArray(data.predictions)) {
+        safePredictions = data.predictions.map(String); 
+      } else if (typeof data.predictions === 'string') {
+        safePredictions = [data.predictions];
+      } else {
+        safePredictions = ["Analysis complete (No specific disease identified)"];
+      }
+
+      // 2. Force precautions to be safe to render (prevents Object crashes)
+      let safePrecautions = "Consult a healthcare professional.";
+      if (Array.isArray(data.precaution)) {
+        safePrecautions = data.precaution.flat().map(String); // Flattens 2D arrays just in case
+      } else if (typeof data.precaution === 'string') {
+        safePrecautions = data.precaution;
+      } else if (data.precaution && typeof data.precaution === 'object') {
+        safePrecautions = "Please consult a doctor for recommended steps."; // Fallback for raw objects
+      }
+      // ------------------------------------
+
       const newEntry = {
         date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        topMatch: predictions[0] || "Unknown",
+        topMatch: safePredictions[0] || "Unknown",
         symptoms: selected,
-        allPredictions: predictions, 
-        precautions: data.precaution || "Consult a healthcare professional." 
+        allPredictions: safePredictions, 
+        precautions: safePrecautions 
       };
       
       const updatedHistory = [newEntry, ...history].slice(0, 10);
@@ -317,11 +346,14 @@ export default function App() {
         await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'history'), { records: updatedHistory }, { merge: true });
       }
 
-      setResults(predictions);
-      setPrecautions(newEntry.precautions);
+      setResults(safePredictions);
+      setPrecautions(safePrecautions);
       setScreen("results");
+
     } catch (err) {
-      setError("Connection failed.");
+      console.error("🔴 API ERROR:", err);
+      // If it fails, it safely kicks you back to the symptoms page without a white screen
+      setError(err.name === 'AbortError' ? "Request timed out. Backend is waking up." : "Connection failed. Check console.");
       setScreen("symptoms");
     }
   }
@@ -918,6 +950,7 @@ export default function App() {
                   </p>
                 )}
               </div>
+              
 
               {/* Buttons */}
               <div data-html2canvas-ignore="true" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '30px', flexWrap: 'wrap' }}>
