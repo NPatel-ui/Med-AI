@@ -1,80 +1,51 @@
-Med-AI
-Project Summary Report: AI Health Assistant with Gemini
+🏥 Med-AI: AI-Powered Disease Prediction & Health Assessment
+Med-AI is a modern, responsive, and intelligent healthcare web application designed to help users identify potential illnesses based on their symptoms. By leveraging a custom Machine Learning backend and a highly intuitive interface, Med-AI provides users with real-time health insights, BMI tracking, and structured medical reports.
 
-Project Overview: This project is an AI-powered health assistant that predicts possible diseases based on user-input symptoms. It integrates a Neural Network (MLPClassifier) for disease prediction and Google Gemini for generating friendly, informative summaries of predictions. This is later made available to use for all on render. Link: https://med-ai-9xcn.onrender.com/
+✨ Key Features
+🚀 Core Functionality
+🔐 Authentication System: Secure email & password login via Firebase Auth. Features include new account creation, mandatory email verification before login, secure session persistence, and seamless logout.
 
-Key Features:
+👤 Comprehensive Profile Management: Users build a dedicated health profile storing their Full Name, Age, Height, Weight, City, State, Mobile Number, and an optional Profile Photo—all safely secured in Firebase Firestore.
 
-Symptom-based disease prediction using a trained Neural Network.
+🧮 Dynamic BMI Calculator: Instantly calculates the user's Body Mass Index (BMI = weight / (height in m)²) and displays their clinical health category (e.g., Underweight, Healthy, Overweight) directly on the dashboard.
 
-Dynamic, interactive user interface built with Streamlit.
+🩺 Interactive Symptoms Checklist: A powerful multi-select grid allowing users to filter symptoms by category (All, Fever, Body, Mind) or search via text. Features a smart "Action Capsule" keeping track of selected symptoms.
 
-Gemini AI integration to generate human-friendly explanations.
+🤖 AI Disease Prediction Engine: Connects to a robust ML backend hosted on Render via a POST /predict endpoint. It processes the user's symptoms and returns the Top 3 predicted diseases along with their calculated probability percentages.
 
-Real-time feedback with a visually appealing UI (modern medical look).
+🕒 Clinical History Tracking: Every assessment is archived in Firestore. Users can browse their past health checks (Date, Time, Symptoms, Predictions) in the dedicated History tab.
 
-Handles missing dataset values automatically.
+🎨 UI & UX Innovations
+🖥️ Modern Medical Theme: A clean, minimalist interface utilizing a professional Teal-based medical color palette, soft gradients, rounded card components, and a consistent typography hierarchy.
 
-Dataset:
+🧭 Structured Navigation: Features a fixed sidebar navigation for desktop and a sleek bottom navigation bar for mobile, ensuring rapid access to the Dashboard, Assessments, History, and Profile.
 
-Format: Excel (Dataset.xlsx)
+📊 Personalized Dashboard: Greets the user by name, displays their active BMI gauge, shows recent activity timelines, and provides quick-action cards to start new assessments or view history.
 
-Features: 20 symptoms as input features
+🏆 Advanced Results Display: Predictions are shown on beautifully ranked cards (1st, 2nd, 3rd) complete with color-coded severity indicators, percentage probabilities, and dynamic recommended next steps (e.g., Rest, Consult Doctor).
 
-Target: Disease labels (Malaria, Dengue, Food Poisoning, Jaundice)
+🖼️ Professional Report Generation (Upgraded!): Instead of plain text, users can now export their assessment as a High-Resolution PNG Image. This beautifully structured snapshot includes the Med-AI header, user demographics, BMI, symptoms, predictions, and recommendations—perfect for sharing with healthcare providers.
 
-Preprocessing: Missing values filled with 0
+📱 Fully Responsive Architecture: Built with an adaptive grid system that fluidly transforms from a wide-screen desktop dashboard (with a persistent sidebar) to a stacked, app-like mobile experience.
 
-Model Details:
+🛠️ Technology Stack
+Frontend: React.js, standard CSS3 (Custom responsive grid & flexbox architecture)
 
-Model: MLPClassifier (Neural Network)
+Backend / AI: Python, Machine Learning Model (Deployed on Render)
 
-Architecture: 2 hidden layers, 10 nodes each
+Database: Firebase Firestore (NoSQL)
 
-Max iterations: 500
+Authentication: Firebase Authentication
 
-Solver: SGD, Learning rate: 0.001
+Report Export: html2canvas (For rendering DOM elements to downloadable PNGs)
 
-Training/Test split: 70/30
+📸 Application Flow
+Onboarding: User registers, verifies their email, and fills out their physical demographics.
 
-Performance:
+Dashboard: User lands on the tailored home screen featuring their calculated BMI and recent assessment history.
 
-Training Accuracy: High (dependent on dataset quality)
+Assessment: User clicks "Start Assessment", searches/filters their active symptoms, and hits "Analyze".
 
-Test Accuracy: Validated using confusion matrix
+Processing: The frontend sends the symptom array to the Render backend, triggering the ML model.
 
-User Interaction:
-
-Users select symptoms via checkboxes in the Streamlit app.
-
-NN predicts disease based on selected symptoms.
-
-Gemini generates a 2–3 line friendly explanation and advice to consult a doctor.
-
-Real-time display with clear visual formatting (dark result box for visibility).
-
-Security:
-
-Gemini API key is stored in a .env file to avoid exposing credentials on GitHub.
-
-.env is added to .gitignore to prevent accidental sharing.
-
-Impact and Benefits:
-
-Provides rapid preliminary disease assessment based on symptoms.
-
-Improves accessibility to AI-assisted health advice.
-
-Educates users while emphasizing consultation with medical professionals.
-
-Modular design allows easy extension to more diseases or integration with other AI models.
-
-Tools & Technologies:
-
-Python, pandas, scikit-learn, Streamlit
-
-Google Gemini API
-
-.env for secure API key management
-
-Conclusion: This project demonstrates a practical integration of classical ML techniques with modern generative AI to provide a safe, interactive, and user-friendly health assistant. It emphasizes data security, model accuracy, and clear communication with the user.# Med-AI
+Results & Export: The UI beautifully cascades the Top 3 predictions. The user can then click "Download Image" to save a clinical snapshot of the results.
