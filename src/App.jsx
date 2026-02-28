@@ -814,23 +814,19 @@ export default function App() {
 
                 <h4 style={{marginBottom: '16px', fontSize: '1rem', color: 'var(--text-dark)'}}>Top 3 Predictions</h4>
                 <div className="disease-list-horizontal mt-2">
-                {(viewingHistoryItem.allPredictions || [viewingHistoryItem.topMatch]).slice(0, 3).map((r, i) => {
-                  const probs = ["78%", "65%", "54%"];
-                  return (
+                {(viewingHistoryItem.allPredictions || [viewingHistoryItem.topMatch]).slice(0, 3).map((r, i) => (
                     <div key={i} className="disease-item-horizontal">
                       <div className="rank-circle">{i + 1}</div>
                       <div className="disease-info">
                         <h4 className="m-0 text-md">{r}</h4>
-                        <p className="m-0 text-sm font-semibold text-muted">
-                          Probability: <br/><span className={i === 0 ? 'text-red' : 'text-orange'}>{probs[i] || '50%'}</span>
-                        </p>
                       </div>
-                      
                       <div className="text-2xl">🦠</div>
                     </div>
-                  );
-                })}
+                ))}
               </div>
+                  
+                
+              
 
                 <div data-html2canvas-ignore="true">
                   <button className="btn-teal-primary full-width mt-4 desktop-w-auto" style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'}} onClick={exportReport}>
@@ -877,24 +873,16 @@ export default function App() {
               </div>
               
               {/* Beautifully Styled Disease Cards */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {results.slice(0, 3).map((r, i) => {
-                  const probs = ["78%", "65%", "54%"];
-                  return (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', borderRadius: '16px', background: '#fafafa', border: '1px solid var(--border-light)' }}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--danger-light)', color: 'var(--danger-red)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.1rem' }}>
-                        {i + 1}
+              <div className="disease-list-horizontal">
+                {results.slice(0, 3).map((r, i) => (
+                    <div key={i} className="disease-item-horizontal">
+                      <div className="rank-circle">{i + 1}</div>
+                      <div className="disease-info">
+                        <h4 className="m-0 text-md">{r}</h4>
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-dark)' }}>{r}</h4>
-                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                          Probability: <span style={{ color: i === 0 ? 'var(--danger-red)' : 'var(--accent-orange)' }}>{probs[i] || '50%'}</span>
-                        </p>
-                      </div>
-                      <div style={{ fontSize: '1.5rem' }}>🦠</div>
+                      <div className="text-2xl">🦠</div>
                     </div>
-                  );
-                })}
+                ))}
               </div>
 
               {/* Dynamic Recommendations Box */}
