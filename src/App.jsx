@@ -74,6 +74,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   
   const [isNewUser, setIsNewUser] = useState(false);
   const [loginData, setLoginData] = useState({ email: "", password: "" });
@@ -191,6 +192,27 @@ export default function App() {
         setError("Please verify your email.");
       }
     } catch (err) { setError(err.message); }
+  };
+
+  // --- NEW: SAVE PROFILE CHANGES TO DATABASE ---
+  const handleUpdateProfile = async () => {
+    try {
+      if (currentUser) {
+        const profileRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main');
+        await setDoc(profileRef, userProfile, { merge: true });
+        setNotification("Profile updated successfully!");
+        setIsEditingProfile(false);
+      }
+    } catch (err) {
+      setError("Failed to update profile.");
+    }
+  };
+
+  const navigateTo = (scr) => {
+    setScreen(scr);
+    setViewingHistoryItem(null);
+    setIsSidebarOpen(false);
+    setIsEditingProfile(false);
   };
 
   const handleRegister = async (e) => {
@@ -659,9 +681,9 @@ export default function App() {
 
         {/* --- PROFILE PAGE --- */}
         {screen === "profile" && (
-          <div className="profile-screen anim-fade-in content-container" style={{padding: '24px 20px 100px'}}>
-            <div className="dash-header no-border mb-4">
-              <div style={{position: 'relative', zIndex: 10, cursor: 'pointer', padding: '5px'}} onClick={() => setScreen("home")}>
+          <div className="screen-container anim-fade-in pb-100">
+            <div className="dash-header mb-4">
+              <div className="clickable-icon" onClick={() => navigateTo("home")}>
                  <Icons.ArrowLeft size={28} className="text-dark" />
               </div>
               <h2 className="header-title">My Profile</h2>
@@ -670,44 +692,99 @@ export default function App() {
             
             <div className="desktop-row">
               <div className="white-card text-center mb-4 desktop-col">
-                <div className="photo-preview-circle mx-auto mb-3" style={{margin: '0 auto 16px', width: '100px', height: '100px'}}>
-                   {userProfile.photo ? <img src={userProfile.photo} alt="User" style={{width:'100%', height:'100%', objectFit:'cover'}}/> : <Icons.User size={40} />}
-                </div>
-                <h3 style={{margin: '0 0 4px 0', fontSize: '1.4rem'}}>{userProfile.name || 'User'}</h3>
-                <p className="text-muted" style={{margin: 0}}>{userProfile.email}</p>
+                <label className="photo-label" style={{ cursor: isEditingProfile ? 'pointer' : 'default', display: 'inline-block', position: 'relative' }}>
+                  <div className="photo-preview-circle mx-auto mb-3" style={{width: '100px', height: '100px'}}>
+                     {userProfile.photo ? <img src={userProfile.photo} alt="User" className="photo-preview"/> : <Icons.User size={40} />}
+                  </div>
+                  {isEditingProfile && (
+                     <>
+                       <div className="upload-badge" style={{ bottom: '0px', left: '50%', transform: 'translateX(-50%)', width: 'max-content' }}>Change Photo</div>
+                       <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden-input" />
+                     </>
+                  )}
+                </label>
+                
+                {isEditingProfile ? (
+                   <input name="name" value={userProfile.name} onChange={handleProfileChange} className="light-input text-center mt-2 mb-2" style={{ fontWeight: 'bold' }} placeholder="Full Name" />
+                ) : (
+                   <h3 className="profile-name">{userProfile.name || 'User'}</h3>
+                )}
+                <p className="text-muted m-0">{userProfile.email}</p>
               </div>
 
               <div className="white-card mb-4 flex-grow desktop-col">
-                <h4 className="mb-3" style={{marginTop: 0}}>Personal Details</h4>
+                <h4 className="m-0 mb-3">Personal Details</h4>
                 <div className="form-group-2">
                   <div>
                     <label className="input-label">Age</label>
-                    <div className="light-input">{userProfile.age || '--'} yrs</div>
+                    {isEditingProfile ? (
+                      <input type="number" name="age" value={userProfile.age} onChange={handleProfileChange} className="light-input" />
+                    ) : (
+                      <div className="light-input bg-disabled">{userProfile.age || '--'} yrs</div>
+                    )}
                   </div>
                   <div>
                     <label className="input-label">Gender</label>
-                    <div className="light-input" style={{textTransform: 'capitalize'}}>{userProfile.gender || '--'}</div>
+                    {isEditingProfile ? (
+                      <input type="text" name="gender" value={userProfile.gender || ''} onChange={handleProfileChange} className="light-input" placeholder="Male/Female" />
+                    ) : (
+                      <div className="light-input bg-disabled" style={{textTransform: 'capitalize'}}>{userProfile.gender || '--'}</div>
+                    )}
                   </div>
                   <div>
-                    <label className="input-label">Height</label>
-                    <div className="light-input">{userProfile.height || '--'} cm</div>
+                    <label className="input-label">Height (cm)</label>
+                    {isEditingProfile ? (
+                      <input type="number" name="height" value={userProfile.height} onChange={handleProfileChange} className="light-input" />
+                    ) : (
+                      <div className="light-input bg-disabled">{userProfile.height || '--'} cm</div>
+                    )}
                   </div>
                   <div>
-                    <label className="input-label">Weight</label>
-                    <div className="light-input">{userProfile.weight || '--'} kg</div>
+                    <label className="input-label">Weight (kg)</label>
+                    {isEditingProfile ? (
+                      <input type="number" name="weight" value={userProfile.weight} onChange={handleProfileChange} className="light-input" />
+                    ) : (
+                      <div className="light-input bg-disabled">{userProfile.weight || '--'} kg</div>
+                    )}
                   </div>
                 </div>
                 
-                <div className="mt-3">
-                  <label className="input-label">Location</label>
-                  <div className="light-input">{userProfile.city ? `${userProfile.city}, ${userProfile.state}` : '--'}</div>
+                <div className="form-group-2 mt-3">
+                  <div>
+                    <label className="input-label">City</label>
+                    {isEditingProfile ? (
+                      <input type="text" name="city" value={userProfile.city} onChange={handleProfileChange} className="light-input" />
+                    ) : (
+                      <div className="light-input bg-disabled">{userProfile.city || '--'}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="input-label">State</label>
+                    {isEditingProfile ? (
+                      <input type="text" name="state" value={userProfile.state} onChange={handleProfileChange} className="light-input" />
+                    ) : (
+                      <div className="light-input bg-disabled">{userProfile.state || '--'}</div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
             
-            <button className="btn-outline-teal full-width desktop-w-auto" onClick={handleLogout}>
-              <Icons.LogOut size={20} /> Log Out
-            </button>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '10px', flexWrap: 'wrap' }}>
+              {isEditingProfile ? (
+                <button className="btn-teal-primary" onClick={handleUpdateProfile} style={{ width: 'auto', padding: '14px 40px', minWidth: '180px' }}>
+                  Save Changes
+                </button>
+              ) : (
+                <button className="btn-teal-primary" onClick={() => setIsEditingProfile(true)} style={{ width: 'auto', padding: '14px 40px', minWidth: '180px' }}>
+                  Edit Profile
+                </button>
+              )}
+
+              <button className="btn-outline-teal" onClick={handleLogout} style={{ width: 'auto', padding: '12px 30px' }}>
+                <Icons.LogOut size={20} /> Log Out
+              </button>
+            </div>
           </div>
         )}
 
