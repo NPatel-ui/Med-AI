@@ -161,6 +161,15 @@ export default function App() {
 
   const bmiValue = calculateBMI();
   const bmiInfo = getBMIInfo(bmiValue);
+  const calculateNeedleAngle = (bmi) => {
+    if (!bmi) return -90; 
+    const minBmi = 15; 
+    const maxBmi = 40; 
+    
+    const clampedBmi = Math.max(minBmi, Math.min(maxBmi, parseFloat(bmi)));
+   
+    return ((clampedBmi - minBmi) / (maxBmi - minBmi)) * 180 - 90;
+  };
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
