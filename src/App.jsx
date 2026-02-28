@@ -11,7 +11,8 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider,
   updateEmail,
-  sendEmailVerification
+  sendEmailVerification,
+  sendPasswordResetEmail
 } from "firebase/auth";
 import { 
   getFirestore, 
@@ -224,7 +225,29 @@ export default function App() {
     } catch (err) { console.error(err); }
   };
 
+  const handleForgotPassword = async () => {
+    setError(null);
+    if (!loginData.email) {
+      setError("Please type your email in the box first to reset.");
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, loginData.email);
+      setNotification("Reset link sent! Check your email.");
+    } catch (err) { 
+      setError(err.message); 
+    }
+  };
+
   const toggleSymptom = (s) => setSelectedSymptoms(prev => ({ ...prev, [s]: !prev[s] }));
+
+  const startNewAssessment = () => {
+    setSelectedSymptoms({}); // Wipes old symptoms
+    setResults([]);          // Wipes old results
+    setSearchQuery("");      // Clears search bar
+    setScreen("symptoms");   // Changes screen
+    setIsSidebarOpen(false); // Closes sidebar if open
+  };
 
   async function analyzeSymptoms() {
     setError(null);
@@ -434,7 +457,7 @@ export default function App() {
               )}
 
               {!isNewUser && (
-                <div className="forgot-password">
+                <div className="forgot-password" onClick={handleForgotPassword} style={{ cursor: 'pointer' }}>
                   <span>Forgot Password?</span>
                 </div>
               )}
