@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
+import html2canvas from "html2canvas";
 import { 
   getAuth, 
   createUserWithEmailAndPassword, 
@@ -16,50 +17,22 @@ import {
   getFirestore, 
   doc, 
   setDoc, 
-  getDoc, 
-  updateDoc
+  getDoc 
 } from "firebase/firestore";
 
-/**
- * MED-AI: PERSONALIZED EDITION (V7.0 - UI Overhaul)
- * - Updated: Complete UI/UX redesign with Glassmorphism, animations, and modern aesthetics.
- * - Logic: Unchanged (Firebase, State, API calls remain exactly as before).
- */
 const API_BASE = import.meta.env.VITE_API_URL || "https://med-ai-1-is35.onrender.com";
 
-// --- FIREBASE INIT (SECURE) ---
-let firebaseConfig = {};
+// --- FIREBASE INIT ---
+let firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
+};
 
-// 1. Attempt to load from Canvas Environment (Preview)
-try {
-  if (typeof __firebase_config !== 'undefined') {
-    firebaseConfig = JSON.parse(__firebase_config);
-  }
-} catch (e) {
-  // Not in Canvas, ignore
-}
-
-// 2. Fallback to Local Environment Variables (Vite/Localhost)
-if (!firebaseConfig.apiKey) {
-  try {
-    firebaseConfig = {
-      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-      appId: import.meta.env.VITE_FIREBASE_APP_ID
-    };
-  } catch (e) {
-    console.warn("Local environment variables not loaded.");
-  }
-}
-
-// Use standard singleton pattern
-let app;
-let auth;
-let db;
-
+let app, auth, db;
 try {
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
   auth = getAuth(app);
@@ -68,99 +41,24 @@ try {
   console.error("Firebase Initialization Failed:", error);
 }
 
-// Use global env var if available (Canvas env), else default. 
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'med-ai-local';
+const appId = 'med-ai-local';
 
+// --- ICONS ---
 const Icons = {
-  Pulse: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-  ),
-  User: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-  ),
-  Brain: ({ size = 120 }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2a2.5 2.5 0 0 1 2.5 2.5V10"/><path d="M14.5 2a2.5 2.5 0 0 0-2.5 2.5V10"/><path d="M20 9.5A2.5 2.5 0 0 0 17.5 7H17V4.5A2.5 2.5 0 0 0 14.5 2h-5A2.5 2.5 0 0 0 7 4.5V7h-.5A2.5 2.5 0 0 0 4 9.5v5A2.5 2.5 0 0 0 6.5 17H7v2.5A2.5 2.5 0 0 0 9.5 22h5a2.5 2.5 0 0 0 2.5-2.5V17h.5a2.5 2.5 0 0 0 2.5-2.5v-5z"/><path d="M12 10v4"/><path d="M8 14h8"/></svg>
-  ),
-  History: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
-  ),
-  Download: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-  ),
-  Camera: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-  ),
-  Scale: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 16c0 1.1-1.1 2-2.5 2s-2.5-0.9-2.5-2 1.1-2 2.5-2 2.5 0.9 2.5 2z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7l2 2"/><path d="M19 9l2-2"/><path d="M3 7c0 6 4.5 11 9 11s9-5 9-11"/></svg>
-  ),
-  Lock: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-  ),
-  Edit: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-  ),
-  Search: () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-  ),
-  Check: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-  )
-};
-
-// --- NEW HISTORY REPORT MODAL ---
-const HistoryModal = ({ item, onClose }) => {
-  if (!item) return null;
-  
-  const predictions = item.allPredictions || [item.topMatch];
-  const prec = item.precautions || "No detailed precautions archived for this record.";
-  const syms = item.symptoms || [];
-
-  return (
-    <div className="otp-overlay" onClick={onClose}>
-      <div className="glass-card modal-card anim-scale-in" onClick={e => e.stopPropagation()}>
-        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'24px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px'}}>
-           <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-             <div className="icon-circle-sm"><Icons.History /></div>
-             <h3 style={{margin:0, fontSize: '1.25rem', fontWeight: 700}}>Assessment Report</h3>
-           </div>
-           <button onClick={onClose} className="close-btn">&times;</button>
-        </div>
-        
-        <div className="modal-section">
-            <div className="modal-label">DATE & TIME</div>
-            <div className="modal-value">{item.date} at {item.time}</div>
-        </div>
-
-        <div className="modal-section">
-             <div className="modal-label">TOP 3 DISEASE INDICATIONS</div>
-             <div className="predictions-list">
-               {predictions.slice(0,3).map((p, i) => (
-                   <div key={i} className="prediction-item">
-                      <span className="rank-badge">#{i+1}</span>
-                      <strong className="disease-name">{p}</strong>
-                   </div>
-               ))}
-             </div>
-        </div>
-
-        <div className="modal-section">
-             <div className="modal-label">SYMPTOMS REPORTED</div>
-             <div className="tags-container">
-                {syms.map((s, i) => (
-                    <span key={i} className="symptom-tag-static">{s.replace(/_/g, ' ')}</span>
-                ))}
-             </div>
-        </div>
-
-        <div className="advice-box">
-            <div className="modal-label" style={{color: '#F59E0B'}}>MEDICAL PRECAUTIONS & ADVICE</div>
-            <p>{prec}</p>
-        </div>
-
-        <button className="btn-secondary full-width" onClick={onClose}>Close Report</button>
-      </div>
-    </div>
-  );
+  MedLogo: ({ size = 28, className="teal-icon" }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/><path d="M10 3h4v4h4v4h-4v4h-4v-4H6V7h4z"/></svg>,
+  User: ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  History: ({ size = 24, className }) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>,
+  EyeOff: ({ size = 20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>,
+  Home: ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>,
+  Clipboard: ({ size = 24, className }) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14h6"/><path d="M9 18h6"/><path d="M9 10h.01"/></svg>,
+  Menu: ({ size = 24, className }) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
+  Check: ({ size = 16 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  Download: ({ size = 20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+  Search: ({ size = 18, className }) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  ArrowRight: ({ size = 20, color="currentColor" }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
+  ArrowLeft: ({ size = 24, className }) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+  Shield: ({ size = 40 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  LogOut: ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
 };
 
 export default function App() {
@@ -174,23 +72,19 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
-  // Auth state
   const [isNewUser, setIsNewUser] = useState(false);
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
-  // User Profile State
   const [userProfile, setUserProfile] = useState({
     name: "", age: "", weight: "", height: "", gender: "",
     email: "", phone: "", city: "", state: "", country: "",
     photo: "", password: "" 
   });
-
-  // Password Change State
-  const [passwordChange, setPasswordChange] = useState({ current: "", new: "" });
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const fallbackSymptoms = ["itching", "skin_rash", "shivering", "joint_pain", "stomach_pain", "fatigue", "cough", "high_fever"];
 
@@ -200,81 +94,52 @@ export default function App() {
         setCurrentUser(user);
         setIsLoggedIn(true);
         await fetchUserData(user.uid, user.email);
-        if (screen === 'login' || screen === 'forgot-password') setScreen("home");
+        if (screen === 'login') setScreen("home");
       } else {
         setCurrentUser(null);
         setIsLoggedIn(false);
-        if (screen !== 'forgot-password') setScreen("login");
+        setScreen("login");
       }
     });
-      fetch(`${API_BASE}/symptoms`)
-  .then(res => res.json())
-  .then(data => {
-    const validData = data.symptoms || data; 
-        
+
+    fetch(`${API_BASE}/symptoms`)
+      .then(res => res.json())
+      .then(data => {
+        const validData = data.symptoms || data;        
         setSymptoms(Array.isArray(validData) ? validData : fallbackSymptoms);
       })
       .catch(() => setSymptoms(fallbackSymptoms));
-    // ---------------------------------------------
 
     return () => unsubscribe();
   }, []);
-  // Clear notification after 3 seconds
+
   useEffect(() => {
     if (notification) {
       const timer = setTimeout(() => setNotification(null), 3000);
       return () => clearTimeout(timer);
     }
   }, [notification]);
+
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => setError(null), 3000);
       return () => clearTimeout(timer);
     }
   }, [error]);
-  
 
-  // --- FIRESTORE HELPERS ---
   const fetchUserData = async (uid, email) => {
     if (!uid) return;
     try {
       const profileRef = doc(db, 'artifacts', appId, 'users', uid, 'profile', 'main');
       const profileSnap = await getDoc(profileRef);
-      
-      if (profileSnap.exists()) {
-        setUserProfile(prev => ({ ...prev, ...profileSnap.data() }));
-      } else {
-        const recoveryProfile = {
-          name: email ? email.split('@')[0] : "User",
-          email: email || "",
-          age: "", weight: "", height: "", gender: "",
-          phone: "", city: "", state: "", country: "",
-          photo: ""
-        };
-        try {
-          await setDoc(profileRef, recoveryProfile);
-          setUserProfile(prev => ({ ...prev, ...recoveryProfile }));
-        } catch (recoveryError) {
-          console.error("Critical: Auto-recovery failed.", recoveryError);
-          await signOut(auth);
-          setScreen("login");
-          setError("Profile synchronization failed. Please login again.");
-        }
-      }
+      if (profileSnap.exists()) setUserProfile(prev => ({ ...prev, ...profileSnap.data() }));
 
       const historyRef = doc(db, 'artifacts', appId, 'users', uid, 'data', 'history');
       const historySnap = await getDoc(historyRef);
-      
-      if (historySnap.exists()) {
-        setHistory(historySnap.data().records || []);
-      } else {
-        await setDoc(historyRef, { records: [] }).catch(() => {});
-      }
+      if (historySnap.exists()) setHistory(historySnap.data().records || []);
     } catch (err) {
-        // You will find the error here:
-        setError("Connection interrupted. Please login again.");
-        signOut(auth);
-      }
+      setError("Connection interrupted.");
+    }
   };
 
   const calculateBMI = () => {
@@ -287,9 +152,9 @@ export default function App() {
   const getBMIInfo = (bmi) => {
     if (!bmi) return { label: "N/A", color: "#94A3B8" };
     const val = parseFloat(bmi);
-    if (val < 18.5) return { label: "Underweight", color: "#EAB308", class: "bmi-yellow" };
-    if (val >= 18.5 && val <= 24.9) return { label: "Normal / Safe", color: "#22C55E", class: "bmi-green" };
-    return { label: "Overweight", color: "#EF4444", class: "bmi-red" };
+    if (val < 18.5) return { label: "Underweight", class: "bmi-yellow" };
+    if (val >= 18.5 && val <= 24.9) return { label: "Healthy", class: "bmi-green" };
+    return { label: "Overweight", class: "bmi-red" };
   };
 
   const bmiValue = calculateBMI();
@@ -305,160 +170,61 @@ export default function App() {
     setLoginData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handlePasswordChangeInput = (e) => {
-    const { name, value } = e.target;
-    setPasswordChange(prev => ({ ...prev, [name]: value }));
-  };
-
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Check if file is larger than 1MB (1,048,576 bytes)
-      if (file.size > 1000000) {
-        setError("Photo is too large. Please upload an image smaller than 1MB.");
-        return;
-      }
-
+      if (file.size > 1000000) { setError("Photo is too large."); return; }
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setUserProfile(prev => ({ ...prev, photo: reader.result }));
-        setError(null); // Clear any previous errors
-      };
+      reader.onloadend = () => setUserProfile(prev => ({ ...prev, photo: reader.result }));
       reader.readAsDataURL(file);
     }
   };
 
-  // --- ACTIONS ---
   const handleLogin = async (e) => {
     e.preventDefault();
     setError(null);
     try {
-      // 1. Try to sign in
       const userCredential = await signInWithEmailAndPassword(auth, loginData.email, loginData.password);
-      const user = userCredential.user;
-
-      // 2. CHECK IF VERIFIED
-      if (!user.emailVerified) {
-        await signOut(auth); // Kick them out if not verified
-        setError("Please verify your email before logging in.");
-        return;
+      if (!userCredential.user.emailVerified) {
+        await signOut(auth);
+        setError("Please verify your email.");
       }
-
-      // 3. If verified, proceed (The onAuthStateChanged listener handles the rest)
-    } catch (err) {
-      console.error("LOGIN ERROR:", err); // Prints details in your browser console
-      setError(err.message);              // Shows the REAL error in the red popup
-    }
+    } catch (err) { setError(err.message); }
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setError(null);
-    setNotification(null); // Clear old messages
-    
     const safeEmail = userProfile.email ? userProfile.email.trim() : "";
     
     if (!safeEmail || !userProfile.password || userProfile.password.length < 6) {
-      setError("Valid email and 6+ char password required.");
-      return;
+      setError("Valid email and 6+ char password required."); return;
+    }
+    if (userProfile.password !== confirmPassword) {
+      setError("Passwords do not match!"); return;
     }
 
     try {
-        // 1. Create the user in Firebase
         const userCredential = await createUserWithEmailAndPassword(auth, safeEmail, userProfile.password);
-        const user = userCredential.user;
-        
-        // 2. Send Verification Email
-        await sendEmailVerification(user);
-
-        // 3. Save their profile to Database
+        await sendEmailVerification(userCredential.user);
         const { password, ...safeProfile } = userProfile;
-        const profileToSave = { ...safeProfile, email: safeEmail };
-        
-        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'main'), profileToSave);
-        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'history'), { records: [] });
-        
-        // 4. Force Logout & Show Instruction
+        await setDoc(doc(db, 'artifacts', appId, 'users', userCredential.user.uid, 'profile', 'main'), { ...safeProfile, email: safeEmail });
         await signOut(auth);
-        setIsNewUser(false); // Switch back to Login screen
-        setNotification("Account created! Verification link sent to your email.");
+        setIsNewUser(false);
+        setNotification("Account created! Verify your email.");
         setUserProfile(prev => ({...prev, password: ""}));
-
-    } catch (err) {
-        console.error(err);
-        setError(err.message || "Registration failed");
-    }
+    } catch (err) { setError(err.message); }
   };
-
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault();
-    setError(null);
-    if (!currentUser) return;
-    try {
-      const { password, ...safeProfile } = userProfile;
-      await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), safeProfile, { merge: true });
-      
-      if (currentUser.email !== userProfile.email) {
-        try {
-          await updateEmail(currentUser, userProfile.email);
-        } catch (emailErr) {
-          setError("Profile saved, but email update requires recent login.");
-          return;
-        }
-      }
-      setNotification("Profile details updated successfully!");
-    } catch (err) {
-      setError("Failed to update profile: " + err.message);
-    }
-  };
-
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!passwordChange.current || !passwordChange.new) {
-      setError("Please enter both current and new passwords.");
-      return;
-    }
-
-    if (passwordChange.new.length < 6) {
-      setError("New password must be at least 6 characters.");
-      return;
-    }
-
-    try {
-      const credential = EmailAuthProvider.credential(currentUser.email, passwordChange.current);
-      await reauthenticateWithCredential(currentUser, credential);
-      await updatePassword(currentUser, passwordChange.new);
-      
-      setNotification("Password changed successfully!");
-      setPasswordChange({ current: "", new: "" });
-    } catch (err) {
-      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-      setError("Wrong current password entered."); // <--- Custom Red Message
-    } else if (err.code === 'auth/weak-password') {
-      setError("Password should be at least 6 characters.");
-    } else if (err.code === 'auth/too-many-requests') {
-      setError("Too many failed attempts. Please try again later.");
-    } else {
-      setError("Failed to update password. Please try again.");
-    }
-    // ----------------------
-  }
-};
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      setUserProfile({ name: "", age: "", weight: "", height: "", gender: "", email: "", phone: "", city: "", state: "", country: "", photo: "", password: "" });
       setHistory([]);
-      setShowProfileMenu(false);
+      setIsSidebarOpen(false);
     } catch (err) { console.error(err); }
   };
 
-  const toggleSymptom = (s) => {
-    setSelectedSymptoms(prev => ({ ...prev, [s]: !prev[s] }));
-  };
+  const toggleSymptom = (s) => setSelectedSymptoms(prev => ({ ...prev, [s]: !prev[s] }));
 
   async function analyzeSymptoms() {
     setError(null);
@@ -466,1171 +232,1017 @@ export default function App() {
     if (selected.length === 0) return;
     
     setScreen("loading");
-    
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); 
 
     try {
       const res = await fetch(`${API_BASE}/predict`, {
-
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          symptoms: selected,
-          user_email: currentUser?.email
-        }),
+        body: JSON.stringify({ symptoms: selected, user_email: currentUser?.email }),
         signal: controller.signal
       });
-      
       clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        throw new Error(`Server error: ${res.status}`);
-      }
-
+      if (!res.ok) throw new Error("Server error");
+      
       const data = await res.json();
       const predictions = data.predictions || [];
-      const precautionText = data.precaution || "Consult a healthcare professional.";
-      
       const newEntry = {
-        date: new Date().toLocaleDateString(),
+        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         topMatch: predictions[0] || "Unknown",
         symptoms: selected,
         allPredictions: predictions, 
-        precautions: precautionText 
+        precautions: data.precaution || "Consult a healthcare professional." 
       };
       
       const updatedHistory = [newEntry, ...history].slice(0, 10);
       setHistory(updatedHistory);
       
       if (currentUser) {
-        const historyRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'history');
-        await setDoc(historyRef, { records: updatedHistory }, { merge: true });
+        await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'history'), { records: updatedHistory }, { merge: true });
       }
 
       setResults(predictions);
-      setPrecautions(precautionText);
+      setPrecautions(newEntry.precautions);
       setScreen("results");
     } catch (err) {
-      console.error(err);
-      if (err.name === 'AbortError') {
-        setError("Analysis timed out. The server took too long.");
-      } else {
-        setError("Connection failed. Check if backend is running.");
-      }
+      setError("Connection failed.");
       setScreen("symptoms");
     }
   }
 
-  const exportReport = () => {
-    const text = `
-MED-AI CLINICAL SCREENING REPORT
-================================
-DATE: ${new Date().toLocaleString()}
+  const exportReport = async () => {
+    // Find the currently active report container
+    const captureElement = document.querySelector(".printable-report-capture");
 
-PATIENT PROFILE:
-----------------
-Name:    ${userProfile.name}
-Gender:  ${userProfile.gender}
-Age:     ${userProfile.age} yrs
-Weight:  ${userProfile.weight} kg
-Height:  ${userProfile.height} cm
-BMI:     ${bmiValue} (${bmiInfo.label})
-Email:   ${userProfile.email}
-Phone:   ${userProfile.phone}
-Address: ${userProfile.city}, ${userProfile.state}, ${userProfile.country}
+    if (!captureElement) {
+      setError("Could not find the report to download.");
+      return;
+    }
 
-ANALYSIS RESULTS:
------------------
-Primary Indication: ${results[0]}
-Secondary Marker:   ${results[1] || 'None identified'}
-Further Correlation: ${results[2] || 'None identified'}
+    try {
+      setNotification("Generating image report...");
+      
+      const canvas = await html2canvas(captureElement, {
+        scale: 2, // Double resolution for crystal clear text
+        backgroundColor: "#F4F7F9", // Matches your app's background theme
+        useCORS: true,
+        windowWidth: 480 // Forces desktop view to format nicely like the mobile card
+      });
 
-GUIDANCE NOTES:
-${precautions}
-
-SYMPTOMS ANALYZED:
-${Object.keys(selectedSymptoms).filter(s => selectedSymptoms[s]).map(s => `- ${s.replace(/_/g, " ")}`).join("\n")}
-
-DISCLAIMER: 
-This report is informational and generated by a machine learning model. 
-It is not a medical diagnosis. Consult a healthcare professional immediately.
-================================
-    `;
-    const element = document.createElement("a");
-    const file = new Blob([text], {type: 'text/plain'});
-    element.href = URL.createObjectURL(file);
-    element.download = `MedAI_Report_${userProfile.name.replace(/\s+/g, '_')}.txt`;
-    document.body.appendChild(element);
-    element.click();
+      // Convert to image and download
+      const image = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = image;
+      link.download = `MedAI_Report_${userProfile.name ? userProfile.name.replace(/\s+/g, '_') : 'User'}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+    } catch (err) {
+      console.error(err);
+      setError("Failed to generate image.");
+    }
   };
 
   const filteredSymptoms = symptoms.filter(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
-
-  // --- RENDER HELPERS ---
 
   return (
     <div className="med-ai-root">
       <style>{css}</style>
       
-      {/* Background Ambience */}
-      <div className="ambient-orb orb-1"></div>
-      <div className="ambient-orb orb-2"></div>
-      
       {notification && <div className="notification-toast">{notification}</div>}
       {error && <div className="error-toast">{error}</div>}
 
-      {/* History Details Modal */}
-      {viewingHistoryItem && (
-        <HistoryModal 
-            item={viewingHistoryItem} 
-            onClose={() => setViewingHistoryItem(null)} 
-        />
-      )}
-
-      <nav className="top-nav">
-        <div className="nav-container glass-card">
-          <div className="brand" onClick={() => setScreen(isLoggedIn ? "home" : "login")}>
-            <div className="icon-box pulse-anim"><Icons.Pulse /></div>
-            <span className="main-logo">MED<span className="accent-text">AI</span></span>
-          </div>
-          
-          {isLoggedIn && (
-            <div className="profile-nav-section">
-              <div 
-                className={`user-indicator ${showProfileMenu ? 'active' : ''}`} 
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-              >
-                {userProfile.photo ? (
-                  <img src={userProfile.photo} alt="Profile" className="nav-profile-img" />
-                ) : (
-                  <div className="nav-profile-placeholder"><Icons.User /></div>
-                )}
+      <main className={`main-stage ${screen === 'login' ? 'is-auth' : ''}`}>
+        
+        {/* --- DESKTOP / MOBILE SIDEBAR --- */}
+        {screen !== "login" && (
+          <>
+            <div className={`sidebar-overlay ${isSidebarOpen ? 'open' : ''}`} onClick={() => setIsSidebarOpen(false)}></div>
+            <div className={`sidebar-menu ${isSidebarOpen ? 'open' : ''}`}>
+              <div className="sidebar-header-logo">
+                <Icons.MedLogo size={36} className="text-white" />
+                <h2 className="text-white" style={{margin: 0, fontWeight: 800, fontSize: '1.8rem'}}>Med-AI</h2>
+              </div>
+              
+              <div className="sidebar-links">
+                <div className={`sidebar-link ${screen === 'home' ? 'active' : ''}`} onClick={() => {setScreen('home'); setIsSidebarOpen(false);}}>
+                  <Icons.Home size={20} /> Dashboard
+                </div>
+                <div className={`sidebar-link ${screen === 'symptoms' ? 'active' : ''}`} onClick={() => {setScreen('symptoms'); setIsSidebarOpen(false);}}>
+                  <Icons.Clipboard size={20} /> Assessment
+                </div>
+                <div className={`sidebar-link ${screen === 'history' || viewingHistoryItem ? 'active' : ''}`} onClick={() => {setScreen('history'); setIsSidebarOpen(false);}}>
+                  <Icons.History size={20} /> History
+                </div>
+                <div className={`sidebar-link ${screen === 'profile' ? 'active' : ''}`} onClick={() => {setScreen('profile'); setIsSidebarOpen(false);}}>
+                  <Icons.User size={20} /> Profile
+                </div>
               </div>
 
-              {showProfileMenu && (
-                <div className="profile-dropdown glass-card anim-fade-in-down">
-                  <div className="dropdown-header">
-                    <div className="header-photo">
-                      {userProfile.photo ? (
-                        <img src={userProfile.photo} alt="Profile" />
-                      ) : (
-                        <div className="placeholder-icon"><Icons.User /></div>
-                      )}
-                    </div>
-                    <div className="header-info">
-                      <span className="name">{userProfile.name}</span>
-                      <span className="email">{userProfile.email}</span>
-                    </div>
-                  </div>
-                  <div className="dropdown-divider"></div>
-                  <button className="menu-btn" onClick={() => { setScreen("profile"); setShowProfileMenu(false); }}>
-                    <Icons.Edit /> Manage Profile
-                  </button>
-                  <div className="dropdown-divider"></div>
-                  <button className="logout-btn" onClick={handleLogout}>Log Out</button>
-                </div>
-              )}
+              <div className="sidebar-logout" onClick={() => { handleLogout(); setIsSidebarOpen(false); }}>
+                <Icons.LogOut size={20} /> Logout
+              </div>
             </div>
-          )}
-        </div>
-      </nav>
+          </>
+        )}
 
-      <main className="main-stage">
-        
+        {/* --- LOGIN / REGISTER SCREEN --- */}
         {screen === "login" && (
-          <div className="login-section glass-card anim-scale-in">
-            <div className="form-header">
-              <div className="logo-lg"><Icons.Brain size={64}/></div>
-              <h2>{isNewUser ? "Join Med-AI" : "Clinical Access"}</h2>
-              <p>{isNewUser ? "Register to start your health journey." : "Enter your credentials to access the neural engine."}</p>
+          <div className="auth-screen anim-fade-in">
+            <div className="auth-header-logo">
+              <Icons.MedLogo size={48} />
+              <h1 className="brand-title-teal">Med-AI</h1>
             </div>
+            
+            <h2 className="welcome-text">{isNewUser ? "Create Profile" : "Welcome Back!"}</h2>
+            <p className="subtitle-text">{isNewUser ? "Fill details to start" : "Login to your Account"}</p>
 
-            {error && <div className="error-bar">{error}</div>}
-
-            {!isNewUser ? (
-              <form className="profile-form" onSubmit={handleLogin}>
-                <div className="form-row full">
-                  <label>Email</label>
-                  <input required name="email" value={loginData.email} onChange={handleLoginChange} placeholder="Enter your email" />
-                </div>
-                <div className="form-row full">
-                  <label>Password</label>
-                  <input required type="password" name="password" value={loginData.password} onChange={handleLoginChange} placeholder="••••••••" />
-                </div>
-                <button type="submit" className="primary-button full-width glow-effect">Access Dashboard</button>
-                <div className="form-footer" style={{justifyContent: 'center'}}>
-                  <span className="footer-text">New here?</span>
-                  <button type="button" className="text-link" onClick={() => setIsNewUser(true)}>Create Profile</button>
-                </div>
-              </form>
-            ) : (
-              <form className="profile-form" onSubmit={handleRegister}>
-                <div className="photo-upload-container">
+            <form className="auth-form" onSubmit={isNewUser ? handleRegister : handleLogin}>
+              
+              {isNewUser && (
+                <div className="photo-upload-wrapper">
                   <label className="photo-label">
-                    <div className="photo-preview-box">
+                    <div className="photo-preview-circle">
                       {userProfile.photo ? (
-                        <img src={userProfile.photo} alt="Preview" className="photo-preview" />
+                         <img src={userProfile.photo} alt="Preview" className="photo-preview" />
                       ) : (
-                        <div className="photo-placeholder"><Icons.Camera /><span>Upload</span></div>
+                         <Icons.User size={40} />
                       )}
                     </div>
+                    <div className="upload-badge">Upload Photo</div>
                     <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden-input" />
                   </label>
                 </div>
+              )}
 
-                <div className="form-row full">
-                  <label>Full Name</label>
-                  <input required name="name" value={userProfile.name} onChange={handleProfileChange} placeholder="John Doe" />
-                </div>
-                <div className="form-group-2">
-                  <div className="form-row">
-                    <label>Gender</label>
-                    <div className="select-wrapper">
-                      <select name="gender" value={userProfile.gender} onChange={handleProfileChange} className="select-input">
-                        <option value="">Select</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="form-row">
-                    <label>Clinical Email</label>
-                    <input required type="email" name="email" value={userProfile.email} onChange={handleProfileChange} placeholder="Email" />
-                  </div>
-                </div>
-                <div className="form-row full">
-                  <label>Set Password</label>
-                  <input required type="password" name="password" value={userProfile.password} onChange={handleProfileChange} placeholder="••••••••" />
-                  <p className="warning-text">⚠️ Password cannot be recovered if lost.</p>
-                </div>
-                <div className="form-group-3">
-                  <div className="form-row">
-                    <label>Age</label>
-                    <input required type="number" name="age" value={userProfile.age} onChange={handleProfileChange} placeholder="Yrs" />
-                  </div>
-                  <div className="form-row">
-                    <label>Weight (kg)</label>
-                    <input required type="number" name="weight" value={userProfile.weight} onChange={handleProfileChange} placeholder="Kg" />
-                  </div>
-                  <div className="form-row">
-                    <label>Height (cm)</label>
-                    <input required type="number" name="height" value={userProfile.height} onChange={handleProfileChange} placeholder="Cm" />
-                  </div>
-                </div>
-                <div className="form-group-2">
-                  <div className="form-row">
-                    <label>Phone Number</label>
-                    <input required type="tel" name="phone" value={userProfile.phone} onChange={handleProfileChange} placeholder="Phone" />
-                  </div>
-                  <div className="form-row">
-                    <label>City</label>
-                    <input required name="city" value={userProfile.city} onChange={handleProfileChange} placeholder="City" />
-                  </div>
-                </div>
-                <div className="form-group-2">
-                  <div className="form-row">
-                    <label>State</label>
-                    <input required name="state" value={userProfile.state} onChange={handleProfileChange} placeholder="State" />
-                  </div>
-                  <div className="form-row">
-                    <label>Country</label>
-                    <input required name="country" value={userProfile.country} onChange={handleProfileChange} placeholder="Country" />
-                  </div>
-                </div>
-                <button type="submit" className="primary-button full-width glow-effect">Initialize Profile</button>
-                <button type="button" className="text-link center" onClick={() => setIsNewUser(false)}>Back to Login</button>
-              </form>
-            )}
-          </div>
-        )}
-
-        {/* PROFILE MANAGEMENT SCREEN */}
-        {screen === "profile" && (
-          <div className="anim-fade-in">
-            <div className="section-header">
-              <h2>My Profile</h2>
-              <p>Manage your clinical identity and security settings.</p>
-            </div>
-
-            {error && <div className="error-bar">{error}</div>}
-
-            <div className="profile-grid-layout">
-              {/* Left Column: Details Edit */}
-              <div className="glass-card padding-lg">
-                <h3>Personal Details</h3>
-                <form className="profile-form" onSubmit={handleUpdateProfile}>
-                  <div className="photo-upload-container">
-                    <label className="photo-label">
-                      <div className="photo-preview-box">
-                        {userProfile.photo ? (
-                          <img src={userProfile.photo} alt="Preview" className="photo-preview" />
-                        ) : (
-                          <div className="photo-placeholder"><Icons.Camera /><span>Update</span></div>
-                        )}
-                      </div>
-                      <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden-input" />
-                    </label>
-                  </div>
-
-                  <div className="form-row full">
-                    <label>Full Name</label>
-                    <input name="name" value={userProfile.name} onChange={handleProfileChange} />
-                  </div>
-                  <div className="form-group-2">
-                    <div className="form-row">
-                      <label>Email (Requires Re-login)</label>
-                      <input type="email" name="email" value={userProfile.email} onChange={handleProfileChange} />
-                    </div>
-                    <div className="form-row">
-                      <label>Gender</label>
-                      <select name="gender" value={userProfile.gender} onChange={handleProfileChange} className="select-input">
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-                  </div>
+              {isNewUser && (
+                <>
+                  <label className="input-label">Full Name</label>
+                  <input required name="name" value={userProfile.name} onChange={handleProfileChange} placeholder="Nitya Sharma" className="light-input mb-3" />
+                  
                   <div className="form-group-3">
-                    <div className="form-row">
-                      <label>Age</label>
-                      <input type="number" name="age" value={userProfile.age} onChange={handleProfileChange} />
+                    <div>
+                      <label className="input-label">Age</label>
+                      <input required type="number" name="age" value={userProfile.age} onChange={handleProfileChange} placeholder="23" className="light-input" />
                     </div>
-                    <div className="form-row">
-                      <label>Weight (kg)</label>
-                      <input type="number" name="weight" value={userProfile.weight} onChange={handleProfileChange} />
+                    <div>
+                      <label className="input-label">Height</label>
+                      <input required type="number" name="height" value={userProfile.height} onChange={handleProfileChange} placeholder="170" className="light-input" />
                     </div>
-                    <div className="form-row">
-                      <label>Height (cm)</label>
-                      <input type="number" name="height" value={userProfile.height} onChange={handleProfileChange} />
-                    </div>
-                  </div>
-                  <div className="form-group-2">
-                    <div className="form-row">
-                      <label>City</label>
-                      <input name="city" value={userProfile.city} onChange={handleProfileChange} />
-                    </div>
-                    <div className="form-row">
-                      <label>State</label>
-                      <input name="state" value={userProfile.state} onChange={handleProfileChange} />
+                    <div>
+                      <label className="input-label">Weight</label>
+                      <input required type="number" name="weight" value={userProfile.weight} onChange={handleProfileChange} placeholder="60" className="light-input" />
                     </div>
                   </div>
-                  <div className="form-row full">
-                    <label>Country</label>
-                    <input name="country" value={userProfile.country} onChange={handleProfileChange} />
+
+                  <div className="form-group-2 mt-3">
+                    <div>
+                      <label className="input-label">City</label>
+                      <input required name="city" value={userProfile.city} onChange={handleProfileChange} placeholder="Mumbai" className="light-input" />
+                    </div>
+                    <div>
+                      <label className="input-label">State</label>
+                      <input required name="state" value={userProfile.state} onChange={handleProfileChange} placeholder="Maharashtra" className="light-input" />
+                    </div>
                   </div>
-                  <button type="submit" className="primary-button full-width glow-effect">Save Changes</button>
-                </form>
+
+                  <label className="input-label mt-3">Mobile No.</label>
+                  <div className="phone-input-wrapper mb-3">
+                    <span className="phone-prefix">+91</span>
+                    <input required type="tel" name="phone" value={userProfile.phone} onChange={handleProfileChange} placeholder="98765 43210" className="light-input phone-input" />
+                  </div>
+                </>
+              )}
+
+              <label className="input-label">Email</label>
+              <input required type="email" name="email" value={isNewUser ? userProfile.email : loginData.email} onChange={isNewUser ? handleProfileChange : handleLoginChange} placeholder="user@gmail.com" className="light-input mb-3" />
+
+              <label className="input-label">Password</label>
+              <div className="password-row mb-1">
+                <input required type="password" name="password" value={isNewUser ? userProfile.password : loginData.password} onChange={isNewUser ? handleProfileChange : handleLoginChange} placeholder="••••••••••••" className="light-input" />
+                <span className="eye-icon"><Icons.EyeOff /></span>
               </div>
-
-              {/* Right Column: Password Change */}
-              <div className="glass-card padding-lg h-fit">
-                <h3>Security</h3>
-                <form className="profile-form" onSubmit={handleChangePassword}>
-                  <div className="form-row full">
-                    <label>Current Password</label>
-                    <input type="password" name="current" value={passwordChange.current} onChange={handlePasswordChangeInput} placeholder="Enter current password" />
-                  </div>
-                  <div className="form-row full">
-                    <label>New Password</label>
-                    <input type="password" name="new" value={passwordChange.new} onChange={handlePasswordChangeInput} placeholder="Enter new password" />
-                  </div>
-                  <button type="submit" className="btn-secondary full-width" style={{marginTop: "10px"}}>Change Password</button>
-                </form>
-
-                <div style={{marginTop: "30px", textAlign: 'center'}}>
-                  <button type="button" className="text-link" onClick={() => setScreen("home")}>&larr; Back to Dashboard</button>
+              
+              {isNewUser && (
+                <div className="password-row mb-3 mt-3">
+                  <input required type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm Password" className="light-input" />
+                  <span className="eye-icon"><Icons.EyeOff /></span>
                 </div>
+              )}
+
+              {!isNewUser && (
+                <div className="forgot-password">
+                  <span>Forgot Password?</span>
+                </div>
+              )}
+
+              <button type="submit" className="btn-teal-primary mt-4">
+                {isNewUser ? "Create Account" : "Login"}
+              </button>
+
+              <div className="auth-footer mt-4">
+                <span className="text-muted">{isNewUser ? "Already have an account?" : "Don't have an account?"}</span>
+                <button type="button" className="text-link-teal ml-2" onClick={() => setIsNewUser(!isNewUser)}>
+                  {isNewUser ? "Login" : "Create Profile"}
+                </button>
               </div>
-            </div>
+            </form>
           </div>
         )}
 
-        {/* HOME SCREEN */}
+        {/* --- HOME DASHBOARD --- */}
         {screen === "home" && (
-          <div className="screen-home anim-fade-in">
-            <div className="hero-grid">
-              <div className="hero-content">
-                <div className="mini-badge">NEURAL ENGINE V7.0</div>
-                <h1>Advanced <br/><span className="gradient-text">Personal Analysis.</span></h1>
-                <p>A sophisticated medical pattern identifying engine tailored to your biology. Connected as <strong>{userProfile.name}</strong>.</p>
-                
+          <div className="dashboard-screen anim-fade-in content-container">
+            <div className="dash-header">
+              <div className="mobile-only" style={{position: 'relative', zIndex: 10, cursor: 'pointer', padding: '5px'}} onClick={() => setIsSidebarOpen(true)}>
+                <Icons.Menu size={28} className="text-dark" />
+              </div>
+              
+              <h2 className="header-title">Dashboard</h2>
+              
+              <div className="profile-mini-avatar" onClick={() => setScreen("profile")} style={{cursor: 'pointer', position: 'relative', zIndex: 10}}>
+                {userProfile.photo ? <img src={userProfile.photo} alt="User" /> : <Icons.User size={20}/>}
+              </div>
+            </div>
+
+            <div className="greeting-section">
+              <h1>Hello, {userProfile.name ? userProfile.name.split(' ')[0].toUpperCase() : 'USER'}! 👋</h1>
+            </div>
+
+            <div className="desktop-row">
                 {bmiValue && (
-                  <div className={`bmi-mini-card glass-card ${bmiInfo.class}`}>
-                    <div className="icon-circle"><Icons.Scale /></div>
-                    <div className="bmi-text">
-                        <span className="label">Clinical BMI</span>
-                        <span className="value">{bmiValue} <span className="status">({bmiInfo.label})</span></span>
+                  <div className="white-card bmi-gauge-card mb-4 desktop-col">
+                    <div className="bmi-info">
+                      <span className="bmi-subtitle">Your BMI</span>
+                      <div className="bmi-value-row">
+                        <h2>{bmiValue}</h2>
+                        <span className="bmi-plus">+</span>
+                      </div>
+                      <div className={`bmi-status-pill ${bmiInfo.class}`}>
+                        <span className="dot"></span> {bmiInfo.label}
+                      </div>
+                    </div>
+                    <div className="bmi-gauge">
+                      <div className="gauge-arc"></div>
+                      <div className="gauge-needle"></div>
                     </div>
                   </div>
                 )}
 
-                <div className="hero-actions">
-                  <button 
-                    className="primary-button lg glow-effect" 
-                    onClick={() => {
-                      setSelectedSymptoms({});  // <--- CLEARS OLD SYMPTOMS
-                      setResults([]);           // <--- CLEARS OLD RESULTS
-                      setScreen("symptoms");    // <--- THEN GOES TO SCREEN
-                    }}
-                  >
-                    Start New Assessment
-                  </button>
+                <div className="action-cards-grid mb-4 desktop-col flex-grow">
+                  <div className="teal-action-card full-span" onClick={() => { setSelectedSymptoms({}); setResults([]); setScreen("symptoms"); }}>
+                    <div className="card-content">
+                      <div className="icon-bubble"><Icons.Clipboard size={20} className="teal-icon" /></div>
+                      <div>
+                        <h3>Start Assessment</h3>
+                        <p>Check Symptoms &rarr;</p>
+                      </div>
+                    </div>
+                    <Icons.ArrowRight size={24} color="white" />
+                  </div>
+
+                  <div className="white-card mini-action" onClick={() => setScreen("history")}>
+                    <div className="icon-bubble teal-bg"><Icons.History size={20} className="teal-icon" /></div>
+                    <h4>View History</h4>
+                  </div>
+
+                  <div className="white-card mini-action" onClick={() => setNotification("Health Tips module coming soon!")}>
+                    <div className="icon-bubble orange-bg">💡</div>
+                    <h4>Health Tips</h4>
+                  </div>
                 </div>
+            </div>
+
+            <div className="recent-activity-section">
+              <div className="section-title-row">
+                <h3>Recent Activity</h3>
+                <span className="dots">•••</span>
               </div>
               
-              <div className="history-sidebar glass-card">
-                <div className="sidebar-header"><Icons.History /><span>Recent History</span></div>
-                <div className="history-list">
-                    {history.length > 0 ? (
-                    history.map((item, idx) => (
-                        <div key={idx} className="history-item" onClick={() => setViewingHistoryItem(item)}>
-                        <div className="history-content">
-                            <div className="history-date">{item.date} • {item.time}</div>
-                            <div className="history-result">{item.topMatch}</div>
-                        </div>
-                        <div className="arrow-icon">&rarr;</div>
-                        </div>
-                    ))
-                    ) : (
-                    <div className="history-empty">No clinical history recorded yet.</div>
-                    )}
+              {history.length > 0 ? (
+                <div className="white-card recent-timeline-card">
+                  <div className="timeline-dot"></div>
+                  <div className="timeline-content">
+                    <p className="time-text">{history[0].date}, {history[0].time}</p>
+                    <p className="symptoms-preview">
+                      {history[0].symptoms && history[0].symptoms.length > 0 
+                        ? history[0].symptoms.slice(0, 2).map(s => s.replace(/_/g, " ")).join(", ") + (history[0].symptoms.length > 2 ? "..." : "")
+                        : "No specific symptoms"}
+                    </p>
+                  </div>
+                  <button className="btn-view-light" onClick={(e) => { e.stopPropagation(); setViewingHistoryItem(history[0]); }}>View</button>
                 </div>
-              </div>
+              ) : (
+                <p className="text-muted text-center mt-3">No activity yet.</p>
+              )}
             </div>
           </div>
         )}
 
-        {/* SYMPTOMS SCREEN */}
+        {/* --- SYMPTOMS CHECKLIST --- */}
         {screen === "symptoms" && (
-          <div className="symptoms-section anim-fade-in">
-            <div className="header-row">
-              <div className="section-title">
-                <h2>Select Biomarkers</h2>
-                <span className="user-welcome">Analyzing patterns for <strong>{userProfile.name}</strong></span>
+          <div className="symptoms-screen anim-fade-in content-container">
+            <div className="dash-header no-border">
+              <div style={{position: 'relative', zIndex: 10, cursor: 'pointer', padding: '5px'}} onClick={() => setScreen("home")}>
+                 <Icons.ArrowLeft size={28} className="text-dark" />
               </div>
-              <div className="search-wrapper glass-card">
-                <Icons.Search />
-                <input placeholder="Search symptoms..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              <h2 className="header-title">Symptoms Checklist</h2>
+              <div style={{width: 28}}></div>
+            </div>
+
+            <div className="search-box mb-3">
+              <Icons.Search size={20} className="text-muted" />
+              <input placeholder="Search Symptoms..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            </div>
+
+            <div className="category-pills mb-4">
+              <span className="pill active">All</span>
+              <span className="pill">Fever</span>
+              <span className="pill">Body</span>
+              <span className="pill">Mind</span>
+            </div>
+
+            <div className="symptoms-list desktop-grid">
+              {filteredSymptoms.map((s, idx) => (
+                <div key={s} className="symptom-row-clean" onClick={() => toggleSymptom(s)}>
+                  <span className="symptom-name">{s.replace(/_/g, " ")}</span>
+                  <div className={`checkbox-square ${selectedSymptoms[s] ? 'checked' : ''}`}>
+                    {selectedSymptoms[s] && <Icons.Check size={16} />}
+                  </div>
+                </div>
+              ))}
+              <div className="mobile-only" style={{ height: "120px" }}></div> 
+            </div>
+
+            <div className="sticky-action-bar">
+              <button className="btn-cancel" onClick={() => setSelectedSymptoms({})}>Cancel</button>
+              <div className="selection-count">
+                <span className="count-num">{Object.values(selectedSymptoms).filter(Boolean).length}/{symptoms.length}</span>
+                <span className="count-text">Selected</span>
+              </div>
+              <button className="btn-analyze" onClick={analyzeSymptoms}>Analyze &rarr;</button>
+            </div>
+          </div>
+        )}
+
+        {/* --- FULL-PAGE HISTORY MAP --- */}
+        {screen === "history" && (
+          <div className="history-screen anim-fade-in content-container" style={{padding: '24px 20px 100px'}}>
+            <div className="dash-header no-border mb-4">
+              <div style={{position: 'relative', zIndex: 10, cursor: 'pointer', padding: '5px'}} onClick={() => setScreen("home")}>
+                 <Icons.ArrowLeft size={28} className="text-dark" />
+              </div>
+              <h2 className="header-title">Assessment History</h2>
+              <div style={{width: 28}}></div>
+            </div>
+            
+            <div className="search-box mb-4">
+              <Icons.Search size={20} className="text-muted" />
+              <input placeholder="Search Reports..." />
+            </div>
+            
+            <div className="history-list-full desktop-grid-history">
+              {history.length > 0 ? history.map((item, idx) => (
+                 <div key={idx} className="white-card mb-3 history-grid-item" onClick={() => setViewingHistoryItem(item)} style={{cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
+                       <div>
+                          <p style={{margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600}}>{item.date}, {item.time}</p>
+                          <h4 style={{margin: '4px 0 0 0', color: 'var(--text-dark)'}}>{item.topMatch || "Assessment Record"}</h4>
+                       </div>
+                       <button className="btn-view-light" onClick={(e) => { e.stopPropagation(); setViewingHistoryItem(item); }}>View</button>
+                    </div>
+                    <div style={{display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px'}}>
+                       {item.symptoms && item.symptoms.slice(0, 3).map((s, i) => (
+                          <span key={i} style={{fontSize: '0.75rem', background: '#f0fdfa', color: 'var(--primary-teal)', padding: '4px 8px', borderRadius: '4px', fontWeight: 600}}>
+                             {s.replace(/_/g, " ")}
+                          </span>
+                       ))}
+                       {item.symptoms && item.symptoms.length > 3 && (
+                          <span style={{fontSize: '0.75rem', background: '#f3f4f6', color: 'var(--text-muted)', padding: '4px 8px', borderRadius: '4px', fontWeight: 600}}>
+                             +{item.symptoms.length - 3} more
+                          </span>
+                       )}
+                    </div>
+                 </div>
+              )) : (
+                 <p className="text-center text-muted mt-4">No assessment history found.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* --- PROFILE PAGE --- */}
+        {screen === "profile" && (
+          <div className="profile-screen anim-fade-in content-container" style={{padding: '24px 20px 100px'}}>
+            <div className="dash-header no-border mb-4">
+              <div style={{position: 'relative', zIndex: 10, cursor: 'pointer', padding: '5px'}} onClick={() => setScreen("home")}>
+                 <Icons.ArrowLeft size={28} className="text-dark" />
+              </div>
+              <h2 className="header-title">My Profile</h2>
+              <div style={{width: 28}}></div>
+            </div>
+            
+            <div className="desktop-row">
+              <div className="white-card text-center mb-4 desktop-col">
+                <div className="photo-preview-circle mx-auto mb-3" style={{margin: '0 auto 16px', width: '100px', height: '100px'}}>
+                   {userProfile.photo ? <img src={userProfile.photo} alt="User" style={{width:'100%', height:'100%', objectFit:'cover'}}/> : <Icons.User size={40} />}
+                </div>
+                <h3 style={{margin: '0 0 4px 0', fontSize: '1.4rem'}}>{userProfile.name || 'User'}</h3>
+                <p className="text-muted" style={{margin: 0}}>{userProfile.email}</p>
+              </div>
+
+              <div className="white-card mb-4 flex-grow desktop-col">
+                <h4 className="mb-3" style={{marginTop: 0}}>Personal Details</h4>
+                <div className="form-group-2">
+                  <div>
+                    <label className="input-label">Age</label>
+                    <div className="light-input">{userProfile.age || '--'} yrs</div>
+                  </div>
+                  <div>
+                    <label className="input-label">Gender</label>
+                    <div className="light-input" style={{textTransform: 'capitalize'}}>{userProfile.gender || '--'}</div>
+                  </div>
+                  <div>
+                    <label className="input-label">Height</label>
+                    <div className="light-input">{userProfile.height || '--'} cm</div>
+                  </div>
+                  <div>
+                    <label className="input-label">Weight</label>
+                    <div className="light-input">{userProfile.weight || '--'} kg</div>
+                  </div>
+                </div>
+                
+                <div className="mt-3">
+                  <label className="input-label">Location</label>
+                  <div className="light-input">{userProfile.city ? `${userProfile.city}, ${userProfile.state}` : '--'}</div>
+                </div>
               </div>
             </div>
             
-            <div className="biomarker-grid">
-              {filteredSymptoms.map(s => (
-                <div 
-                  key={s} 
-                  className={`marker-card glass-card ${selectedSymptoms[s] ? 'selected' : ''}`}
-                  onClick={() => toggleSymptom(s)}
-                >
-                  <div className="check-circle">{selectedSymptoms[s] && <Icons.Check />}</div>
-                  <span>{s.replace(/_/g, " ")}</span>
-                </div>
-              ))}
-              
-              {/* FIX FOR OVERLAP: Invisible spacer so you can scroll to the very bottom */}
-              <div style={{ height: "100px", width: "100%" }}></div> 
-            </div>
-
-            {/* THE STATIC ACTION BAR (Placed correctly) */}
-            {/* --- NEW LAYOUT: CANCEL | COUNT | ANALYZE --- */}
-      {Object.values(selectedSymptoms).filter(Boolean).length > 0 && (
-        <div className="action-bar-static" style={{justifyContent: 'space-between'}}>
-          
-          {/* 1. LEFT: Cancel Button */}
-          <button 
-            className="btn-secondary" 
-            onClick={() => setSelectedSymptoms({})}
-            style={{padding: '10px 20px', border: 'none', color: '#94a3b8'}}
-          >
-            Cancel
-          </button>
-
-          {/* 2. CENTER: The Counter */}
-          <div className="dock-stats" style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-            <span className="count" style={{fontSize: '1.5rem', fontWeight: '800', lineHeight: '1'}}>
-              {Object.values(selectedSymptoms).filter(Boolean).length}
-            </span>
-            <span className="label" style={{fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.7}}>
-              Selected
-            </span>
+            <button className="btn-outline-teal full-width desktop-w-auto" onClick={handleLogout}>
+              <Icons.LogOut size={20} /> Log Out
+            </button>
           </div>
-
-          {/* 3. RIGHT: Analyze Button */}
-          <button 
-            className="primary-button btn-compact" 
-            onClick={analyzeSymptoms}
-          >
-            Analyze
-          </button>
-
-        </div>
-      )}
-
-          </div> 
         )}
-        {/* LOADING SCREEN */}
+
+        {/* --- REPORT DETAILS OVERLAY --- */}
+        {viewingHistoryItem && (
+          <div className="report-details-screen anim-fade-in content-container" style={{
+            position: 'absolute', top: 0, left: 0, width: '100%', minHeight: '100vh', 
+            background: 'var(--bg-main)', zIndex: 2000, padding: '24px 20px 100px', boxSizing: 'border-box'
+          }}>
+            <div className="printable-report-capture" style={{background: 'var(--bg-main)', padding: '20px', borderRadius: '16px', maxWidth: '480px', margin: '0 auto'}}>
+              <div className="dash-header no-border mb-4">
+                <div data-html2canvas-ignore="true" style={{position: 'relative', zIndex: 10, cursor: 'pointer', padding: '5px'}} onClick={() => setViewingHistoryItem(null)}>
+                   <Icons.ArrowLeft size={28} className="text-dark" />
+                </div>
+                <h2 className="header-title">Report Details</h2>
+                <div style={{width: 28}}></div>
+              </div>
+
+              <div className="white-card mb-4" style={{boxShadow: '0 10px 30px rgba(0,0,0,0.05)'}}>
+                <h4 style={{marginTop: 0, marginBottom: '8px', fontSize: '1rem', color: 'var(--text-dark)'}}>Date & Time</h4>
+                <p className="text-muted" style={{margin: '0 0 24px 0', fontSize: '0.95rem', fontWeight: 500}}>
+                  {viewingHistoryItem.date}, {viewingHistoryItem.time}
+                </p>
+
+                <h4 style={{marginBottom: '12px', fontSize: '1rem', color: 'var(--text-dark)'}}>Symptoms Selected</h4>
+                <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px'}}>
+                  {viewingHistoryItem.symptoms && viewingHistoryItem.symptoms.map((s, i) => (
+                     <span key={i} style={{fontSize: '0.85rem', background: '#fee2e2', color: '#dc2626', padding: '6px 12px', borderRadius: '8px', fontWeight: 600, textTransform: 'capitalize'}}>
+                        {s.replace(/_/g, " ")}
+                     </span>
+                  ))}
+                </div>
+
+                <h4 style={{marginBottom: '16px', fontSize: '1rem', color: 'var(--text-dark)'}}>Top 3 Predictions</h4>
+                <div className="disease-list-horizontal mt-2">
+                {(viewingHistoryItem.allPredictions || [viewingHistoryItem.topMatch]).slice(0, 3).map((r, i) => {
+                  const probs = ["78%", "65%", "54%"];
+                  return (
+                    <div key={i} className="disease-item-horizontal">
+                      <div className="rank-circle">{i + 1}</div>
+                      <div className="disease-info">
+                        <h4 className="m-0 text-md">{r}</h4>
+                        <p className="m-0 text-sm font-semibold text-muted">
+                          Probability: <br/><span className={i === 0 ? 'text-red' : 'text-orange'}>{probs[i] || '50%'}</span>
+                        </p>
+                      </div>
+                      
+                      <div className="text-2xl">🦠</div>
+                    </div>
+                  );
+                })}
+              </div>
+
+                <div data-html2canvas-ignore="true">
+                  <button className="btn-teal-primary full-width mt-4 desktop-w-auto" style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'}} onClick={exportReport}>
+                    <Icons.Download size={20} /> Download Image
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --- LOADING SCREEN --- */}
         {screen === "loading" && (
-          <div className="loading-state anim-fade-in">
-            <div className="neural-spinner-lg">
-                <div className="spinner-ring ring-1"></div>
-                <div className="spinner-ring ring-2"></div>
-                <div className="spinner-core"><Icons.Brain size={40}/></div>
-            </div>
-            <h3>Cross-referencing neural database...</h3>
-            <p>Analyzing symptom correlations against clinical models.</p>
+          <div className="loading-state anim-fade-in content-container">
+            <div className="pulse-loader"><Icons.MedLogo size={60} /></div>
+            <h3 className="mt-3">Analyzing Symptoms...</h3>
           </div>
         )}
 
-        {/* RESULTS SCREEN */}
+        {/* --- RESULTS SCREEN (Wide Desktop Layout) --- */}
         {screen === "results" && (
-          <div className="results-section anim-fade-in">
-            <div className="results-intro">
-              <div className="mini-badge success">SCREENING COMPLETE</div>
-              <div className="results-title-row">
-                <h2>Analysis Summary</h2>
-                <button className="export-btn glass-card" onClick={exportReport}>
-                  <Icons.Download />
-                  Export Report
-                </button>
-              </div>
-            </div>
-
-            <div className="results-grid">
-              <div className="primary-result glass-card glow-border">
-                <div className="result-clinical-meta">
-                    <span className="tier-tag">PRIMARY INDICATION</span>
-                    <span className={`bmi-badge ${bmiInfo.class}`}>BMI: {bmiValue} ({bmiInfo.label})</span>
+          <div className="results-fullscreen-wrapper anim-fade-in">
+            <div className="printable-report-capture results-wide-card-container">
+              
+              <div className="results-teal-header-wide" data-html2canvas-ignore="true">
+                <div className="clickable-icon text-white" style={{ position: 'absolute', left: '20px', top: '20px' }} onClick={() => setScreen("home")}>
+                   <Icons.ArrowLeft size={28} />
                 </div>
-                <h3>{results[0]}</h3>
-                <p>Pattern correlation suggests high alignment with clinical signatures for this condition.</p>
-                <div className="confidence-bar"><div className="fill" style={{width: '88%'}}></div></div>
+                <h2 className="text-white text-center m-0" style={{ paddingTop: '20px', fontSize: '1.5rem' }}>Analysis Result</h2>
+                
+              </div>
+
+              <div className="results-wide-card">
+                <div className="top-predicted-badge">Top 3 Predicted Diseases</div>
+                
+                <div className="disease-grid-wide mt-4">
+                  {results.slice(0, 3).map((r, i) => {
+                    const probs = ["78%", "65%", "54%"];
+                    return (
+                      <div key={i} className="disease-item-wide">
+                        <div className="rank-circle">{i + 1}</div>
+                        <div className="disease-info">
+                          <h4 className="m-0 text-md">{r}</h4>
+                          <p className="m-0 text-sm font-semibold text-muted">
+                            Probability: <span className={i === 0 ? 'text-red' : 'text-orange'}>{probs[i] || '50%'}</span>
+                          </p>
+                        </div>
+                        <div className="text-2xl">🦠</div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="results-bottom-row mt-4">
+                  <div className="recommendations-section mt-4">
+                <h4 className="text-md m-0 mb-3">Recommended Next Steps</h4>
+                {Array.isArray(precautions) ? (
+                  <ul className="rec-list">
+                    {precautions.map((p, i) => <li key={i} style={{marginBottom: '6px'}}>{p}</li>)}
+                  </ul>
+                ) : (
+                  <p className="text-muted m-0" style={{ lineHeight: '1.6', fontSize: '0.9rem', fontWeight: 600 }}>
+                    {precautions || "Consult a healthcare professional."}
+                  </p>
+                )}
+              </div>
+
+                  <div className="action-buttons-column" data-html2canvas-ignore="true">
+                    <button className="btn-outline-teal full-width mb-3 center-flex gap-2" onClick={exportReport}>
+                      <Icons.Download size={20} /> Export Report
+                    </button>
+                    <button className="btn-teal-primary full-width" onClick={() => setScreen("home")} style={{ background: '#11322A', border: 'none' }}>
+                      Return to Dashboard
+                    </button>
+                  </div>
+                </div>
+                
+                <p className="text-center text-xs text-muted mt-4">
+                  Date: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </p>
               </div>
               
-              <div className="side-results">
-                {results.slice(1, 3).map((r, i) => (
-                  <div key={i} className="mini-result glass-card">
-                    <span className="tier-tag">ALTERNATIVE {i + 1}</span>
-                    <h4>{r}</h4>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="precautions-section glass-card">
-              <div className="section-icon"><Icons.Lock /></div>
-              <div className="content">
-                <h3>Guidance Protocols</h3>
-                <p>{precautions}</p>
-              </div>
-            </div>
-
-            <div className="medical-disclaimer">
-              <div className="disclaimer-header">⚠️ MEDICAL SAFETY PROTOCOL</div>
-              <p>This report is clinical-data driven but does not constitute a legal diagnosis. Always consult your primary care physician.</p>
-              <button className="outline-btn" onClick={() => setScreen("home")}>Return to Dashboard</button>
             </div>
           </div>
         )}
+
+        {/* --- BOTTOM NAVIGATION --- */}
+        {isLoggedIn && screen !== "login" && screen !== "loading" && screen !== "symptoms" && screen !== "results" && !viewingHistoryItem && (
+          <nav className="bottom-nav">
+            <div className={`nav-item ${screen === "home" ? "active" : ""}`} onClick={() => setScreen("home")}>
+              <Icons.Home />
+              <span>Home</span>
+            </div>
+            <div className={`nav-item ${screen === "symptoms" ? "active" : ""}`} onClick={() => setScreen("symptoms")}>
+              <Icons.Clipboard />
+              <span>Assessment</span>
+            </div>
+            <div className={`nav-item ${screen === "history" ? "active" : ""}`} onClick={() => setScreen("history")}>
+              <Icons.History />
+              <span>History</span>
+            </div>
+            <div className="nav-item" onClick={handleLogout}>
+              <Icons.LogOut />
+              <span>Logout</span>
+            </div>
+          </nav>
+        )}
+
       </main>
     </div>
   );
 }
 
 const css = `
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --bg-dark: #0B1120;
-  --glass-bg: rgba(30, 41, 59, 0.4);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --primary: #22d3ee;
-  --primary-glow: rgba(34, 211, 238, 0.5);
-  --secondary: #8b5cf6;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --font-main: 'Outfit', system-ui, sans-serif;
+  --primary-teal: #004D40;
+  --primary-light: #00695C;
+  --bg-main: #F4F7F9;
+  --white: #FFFFFF;
+  --text-dark: #1F2937;
+  --text-muted: #6B7280;
+  --accent-orange: #F97316;
+  --border-light: #E5E7EB;
+  --danger-red: #EF4444;
+  --success-green: #10B981;
 }
 
-body { margin: 0; overflow-x: hidden; background: var(--bg-dark); }
+body { margin: 0; background-color: var(--bg-main); font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; color: var(--text-dark); }
 
-.med-ai-root {
-  font-family: var(--font-main);
-  background: var(--bg-dark);
-  color: var(--text-main);
-  min-height: 100vh;
-  width: 100vw;
-  position: relative;
-  overflow-x: hidden;
-  box-sizing: border-box; /* Added to prevent scrollbar issues */
-}
+.med-ai-root { display: flex; justify-content: flex-start; min-height: 100vh; width: 100vw; background: var(--bg-main); }
 
-/* --- AMBIENT BACKGROUND --- */
-.ambient-orb {
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(100px);
-  opacity: 0.4;
-  z-index: 0;
-  animation: floatOrb 20s infinite ease-in-out;
-}
-.orb-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, var(--secondary), transparent 70%); }
-.orb-2 { bottom: -10%; right: -10%; width: 40vw; height: 40vw; background: radial-gradient(circle, var(--primary), transparent 70%); animation-delay: -10s; }
-
-@keyframes floatOrb {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(30px, 50px); }
-}
-  /* ... existing animations code ... */
-
-/* --- NOTIFICATIONS --- */
-.notification-toast { 
-  position: fixed; 
-  top: 20px; 
-  left: 50%; 
-  transform: translateX(-50%); 
-  background: #10B981; 
-  color: white; 
-  padding: 12px 24px; 
-  border-radius: 50px; 
-  z-index: 3000; 
-  font-weight: 600; 
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
-  white-space: nowrap;
-}
-
-/* --- PASTE THIS INSIDE YOUR CSS CONSTANT --- */
-
-.error-toast { 
-  position: fixed; 
-  top: 20px; 
-  left: 50%; 
-  transform: translateX(-50%); 
-  background: #EF4444; /* RED COLOR */
-  color: white; 
-  padding: 12px 24px; 
-  border-radius: 50px; 
-  z-index: 9999; 
-  font-weight: 600; 
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
-  white-space: nowrap;
-}
-
-/* --- GLASSMORPHISM CARD --- */
-.glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--glass-border);
-  border-radius: 24px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-}
-  /* --- UNIVERSAL CENTER POPUP (Fixes Desktop) --- */
-.otp-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.85); /* Dark background */
-  z-index: 10000;
-  
-  /* This centers the card specifically */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  backdrop-filter: blur(5px); /* Nice blur effect */
-}
-
-/* Ensure the card looks good on desktop */
-.modal-card {
-  position: relative;
-  width: 90%;
-  max-width: 600px; /* Limits width on big screens */
-  max-height: 90vh; /* Prevents it from being too tall */
-  overflow-y: auto; /* Scroll inside the card if needed */
-  margin: 0 auto;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-}
-
-/* --- NAVIGATION --- */
-.top-nav {
-  position: fixed; top: 0; width: 100%; z-index: 1000; padding: 20px;
-  display: flex; justify-content: center; box-sizing: border-box;
-}
-.nav-container {
-  width: 100%; max-width: 1200px; padding: 12px 24px;
-  display: flex; justify-content: space-between; align-items: center;
-}
-.brand { display: flex; align-items: center; gap: 12px; cursor: pointer; }
-.icon-box { color: var(--primary); display: flex; filter: drop-shadow(0 0 8px var(--primary-glow)); }
-.pulse-anim { animation: pulse 2s infinite; }
-.main-logo { font-weight: 800; font-size: 1.5rem; letter-spacing: -0.5px; }
-.accent-text { color: var(--primary); }
-
-.user-indicator {
-  width: 44px; height: 44px; border-radius: 14px; background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center;
-  cursor: pointer; overflow: hidden; transition: 0.3s;
-}
-.user-indicator:hover, .user-indicator.active { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
-.nav-profile-img { width: 100%; height: 100%; object-fit: cover; }
-
-/* --- DROPDOWN (FIXED TRANSPARENCY) --- */
-.profile-dropdown {
-  position: absolute;
-  top: 70px;
-  right: 0;
-  width: 300px;
-  padding: 20px;
-  z-index: 1001;
-  /* Added solid background so it doesn't merge with the page */
-  background: #0B1120; 
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-}
-.dropdown-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
-.header-photo { width: 50px; height: 50px; border-radius: 12px; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.header-info { display: flex; flex-direction: column; }
-.header-info .name { font-weight: 700; color: #fff; }
-.header-info .email { font-size: 0.8rem; color: var(--text-muted); }
-.dropdown-divider { height: 1px; background: var(--glass-border); margin: 15px 0; }
-.menu-btn {
-  width: 100%; text-align: left; background: none; border: none; color: var(--text-main);
-  padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: 500;
-  display: flex; align-items: center; gap: 10px;
-}
-.menu-btn:hover { background: rgba(255,255,255,0.05); color: var(--primary); }
-.logout-btn {
-  width: 100%; padding: 10px; background: rgba(239, 68, 68, 0.15); color: #ef4444;
-  border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s;
-}
-.logout-btn:hover { background: rgba(239, 68, 68, 0.25); }
-
-/* --- MAIN STAGE --- */
+/* --- CORE LAYOUT STRUCTURE --- */
 .main-stage {
-  max-width: 1200px; margin: 0 auto; padding: 120px 20px 40px;
-  position: relative; z-index: 1; box-sizing: border-box;
+  width: 100%; max-width: 480px; margin: 0 auto; background-color: var(--bg-main);
+  min-height: 100vh; position: relative; overflow-x: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 0 20px rgba(0,0,0,0.05); transition: 0.3s ease;
 }
 
-/* --- FORMS & LOGIN --- */
-.login-section { max-width: 500px; margin: 40px auto; padding: 40px; text-align: center; }
-.form-header .logo-lg { color: var(--primary); margin-bottom: 20px; filter: drop-shadow(0 0 15px var(--primary-glow)); }
-.form-header h2 { font-size: 2rem; font-weight: 800; margin-bottom: 10px; }
-.form-header p { color: var(--text-muted); line-height: 1.5; margin-bottom: 30px; }
+/* Utilities */
+.text-dark { color: var(--text-dark); }
+.text-muted { color: var(--text-muted); }
+.text-white { color: var(--white); }
+.teal-icon { color: var(--primary-teal); }
+.red-text { color: var(--danger-red) !important; font-weight: 600; }
+.mt-3 { margin-top: 16px; } .mt-4 { margin-top: 24px; } .mb-1 { margin-bottom: 8px; } .mb-3 { margin-bottom: 16px; } .mb-4 { margin-bottom: 24px; } .ml-2 { margin-left: 8px; }
+.full-width { width: 100%; }
+.text-center { text-align: center; }
+.flex-grow { flex: 1; }
 
-.profile-form { text-align: left; display: flex; flex-direction: column; gap: 16px; }
-.form-row label {
-  display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+/* Buttons */
+.btn-teal-primary {
+  background: var(--primary-teal); color: var(--white); border: none; padding: 16px;
+  border-radius: 50px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; text-align: center; width: 100%;
 }
-input, select {
-  width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border);
-  padding: 14px; border-radius: 12px; color: #fff; font-family: var(--font-main);
-  font-size: 1rem; transition: 0.3s; box-sizing: border-box;
+.btn-teal-primary:hover { background: var(--primary-light); }
+.btn-outline-teal {
+  background: transparent; border: 1.5px solid var(--primary-teal); color: var(--primary-teal);
+  padding: 14px; border-radius: 50px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
 }
-input:focus, select:focus {
-  outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.1); background: rgba(15, 23, 42, 0.9);
+.text-link-teal { background: none; border: none; color: var(--primary-teal); font-weight: 700; cursor: pointer; font-size: 0.95rem; }
+
+/* --- AUTH SCREEN --- */
+.auth-screen { padding: 40px 24px; display: flex; flex-direction: column; background: var(--white); flex: 1; }
+.auth-header-logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 30px; }
+.brand-title-teal { font-size: 2rem; font-weight: 800; color: var(--primary-teal); margin: 0; }
+.welcome-text { font-size: 1.8rem; font-weight: 800; margin: 0 0 8px 0; color: var(--text-dark); text-align: center; }
+.subtitle-text { color: var(--text-muted); text-align: center; margin-bottom: 30px; }
+
+.input-label { display: block; font-size: 0.85rem; color: var(--text-dark); font-weight: 600; margin-bottom: 8px; }
+.light-input {
+  width: 100%; background: var(--white); border: 1.5px solid var(--border-light);
+  padding: 14px 16px; border-radius: 12px; color: var(--text-dark); font-size: 1rem;
+  box-sizing: border-box; outline: none; transition: 0.2s; font-family: inherit;
 }
-.form-group-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.light-input:focus { border-color: var(--primary-teal); }
+.password-row { position: relative; }
+.eye-icon { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); cursor: pointer; }
+.forgot-password { text-align: right; font-size: 0.85rem; color: var(--primary-teal); font-weight: 600; cursor: pointer; margin-bottom: 24px; }
+.auth-footer { display: flex; justify-content: center; align-items: center; font-size: 0.95rem; }
+
+/* Profile Upload */
+.photo-upload-wrapper { display: flex; justify-content: center; margin-bottom: 24px; }
+.photo-label { cursor: pointer; position: relative; display: flex; flex-direction: column; align-items: center; }
+.photo-preview-circle { width: 90px; height: 90px; border-radius: 50%; border: 2px dashed var(--primary-teal); display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--primary-teal); background: #f0fdfa; }
+.photo-preview { width: 100%; height: 100%; object-fit: cover; }
+.upload-badge { background: var(--primary-teal); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; position: absolute; bottom: -10px; border: 2px solid white; }
+.hidden-input { display: none; }
+
+/* Form Grids */
 .form-group-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.form-group-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.phone-input-wrapper { display: flex; align-items: center; border: 1.5px solid var(--border-light); border-radius: 12px; overflow: hidden; }
+.phone-prefix { background: #f3f4f6; padding: 14px 16px; color: var(--text-dark); font-weight: 600; border-right: 1.5px solid var(--border-light); }
+.phone-input { border: none; border-radius: 0; }
 
-/* --- BUTTONS --- */
-.primary-button {
-  background: linear-gradient(135deg, var(--primary), #0891b2); color: #0f172a;
-  border: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 1rem;
-  cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; width: 100%;
+/* --- SIDEBAR MENU --- */
+.sidebar-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5); z-index: 3000;
+  opacity: 0; visibility: hidden; transition: 0.3s ease;
 }
-.primary-button.lg { padding: 20px 40px; font-size: 1.1rem; border-radius: 16px; width: auto; }
-.glow-effect:hover { transform: translateY(-2px); box-shadow: 0 10px 30px -5px var(--primary-glow); }
-.btn-secondary {
-  background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted);
-  padding: 14px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.2s;
+.sidebar-overlay.open { opacity: 1; visibility: visible; }
+.sidebar-menu {
+  position: fixed; top: 0; left: 0; width: 280px; height: 100%;
+  background: var(--primary-teal); z-index: 3001;
+  transform: translateX(-100%); transition: transform 0.3s ease;
+  display: flex; flex-direction: column; padding: 40px 0;
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.15);
 }
-.btn-secondary:hover { color: #fff; border-color: #fff; }
-.btn-action {
-  background: var(--text-main); color: #0f172a; border: none; padding: 14px 28px;
-  border-radius: 12px; font-weight: 800; cursor: pointer;
+.sidebar-menu.open { transform: translateX(0); }
+.sidebar-header-logo { display: flex; align-items: center; gap: 12px; padding: 0 24px; margin-bottom: 40px; }
+.sidebar-links { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.sidebar-link {
+  display: flex; align-items: center; gap: 16px; padding: 16px 24px;
+  color: rgba(255, 255, 255, 0.6); font-weight: 600; font-size: 1.05rem;
+  cursor: pointer; transition: 0.2s; margin-right: 24px;
+  border-top-right-radius: 50px; border-bottom-right-radius: 50px;
 }
-.text-link { background: none; border: none; color: var(--primary); font-weight: 600; cursor: pointer; }
-.footer-text { color: var(--text-muted); font-size: 0.9rem; margin-right: 8px; }
+.sidebar-link:hover { color: white; background: rgba(255, 255, 255, 0.05); }
+.sidebar-link.active {
+  color: var(--primary-teal); background: white; font-weight: 700; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+.sidebar-link.active svg { color: var(--primary-teal); }
+.sidebar-logout {
+  display: flex; align-items: center; gap: 16px; padding: 16px 24px;
+  color: rgba(255, 255, 255, 0.6); font-weight: 600; font-size: 1.05rem;
+  cursor: pointer; transition: 0.2s;
+}
+.sidebar-logout:hover { color: var(--danger-red); }
 
-/* --- COMPACT ACTION CAPSULE (Fixes Wide Desktop) --- */
-.action-bar-static {
-  /* Sizing & Positioning */
-  width: 90%;              /* Fits mobile nicely */
-  max-width: 480px;        /* STOPS it from stretching on Desktop */
-  margin: 40px auto 60px;  /* Centers it horizontally */
-  
-  /* Layout */
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-  gap: 12px;
+/* --- DASHBOARD --- */
+.dash-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; margin-bottom: 20px;}
+.header-title { font-size: 1.25rem; font-weight: 700; margin: 0; }
+.profile-mini-avatar { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: #e5e7eb; display: flex; align-items: center; justify-content: center; }
+.profile-mini-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-  /* Glass/Capsule Styling */
-  background: rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 100px;    /* Makes it fully rounded */
-  padding: 10px 14px;      /* Compact padding */
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5); /* Nice floating shadow */
-}
+.greeting-section h1 { font-size: 1.8rem; font-weight: 800; margin: 0 0 20px 0; }
 
-/* Cancel Button Hover Effect */
-.btn-ghost {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  padding: 8px 16px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: 0.2s;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-.btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
-}
+.white-card { background: var(--white); border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
 
-/* Stats Counter */
-.capsule-stats {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-  
-  /* Glass style */
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  padding: 16px 24px;
-  border-radius: 50px;
-  width: 90%;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
+/* BMI Gauge Mock */
+.bmi-gauge-card { display: flex; justify-content: space-between; align-items: center; }
+.bmi-subtitle { color: var(--text-muted); font-size: 0.9rem; font-weight: 600; }
+.bmi-value-row { display: flex; align-items: baseline; gap: 4px; margin: 8px 0; }
+.bmi-value-row h2 { font-size: 2.5rem; font-weight: 800; margin: 0; color: var(--text-dark); }
+.bmi-plus { color: var(--border-light); font-size: 1.5rem; font-weight: 500; }
+.bmi-status-pill { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.85rem; }
+.bmi-status-pill .dot { width: 8px; height: 8px; border-radius: 50%; }
+.bmi-green { color: var(--success-green); } .bmi-green .dot { background: var(--success-green); }
+.bmi-yellow { color: var(--accent-orange); } .bmi-yellow .dot { background: var(--accent-orange); }
+.bmi-red { color: var(--danger-red); } .bmi-red .dot { background: var(--danger-red); }
+.bmi-gauge { width: 80px; height: 40px; border-top-left-radius: 40px; border-top-right-radius: 40px; background: conic-gradient(from 270deg at 50% 100%, var(--danger-red) 0deg, var(--accent-orange) 45deg, var(--success-green) 90deg, var(--border-light) 90deg); position: relative; margin-top: 10px; }
+.bmi-gauge::after { content: ''; position: absolute; bottom: 0; left: 10px; right: 10px; top: 10px; background: white; border-top-left-radius: 30px; border-top-right-radius: 30px; }
+.gauge-needle { position: absolute; bottom: 0; left: 50%; width: 2px; height: 30px; background: var(--text-dark); transform-origin: bottom center; transform: rotate(45deg); z-index: 2; }
+.gauge-needle::after { content: ''; position: absolute; bottom: -4px; left: -3px; width: 8px; height: 8px; background: var(--text-dark); border-radius: 50%; }
 
-.dock-btns {
-  display: flex !important;
-  gap: 15px !important;
-  width: auto !important; /* Let buttons determine width */
-}
+/* Action Cards */
+.action-cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.full-span { grid-column: span 2; }
+.teal-action-card { background: var(--primary-teal); border-radius: 20px; padding: 24px; color: white; display: flex; justify-content: space-between; align-items: center; cursor: pointer; box-shadow: 0 10px 25px rgba(0, 77, 64, 0.2); }
+.teal-action-card .card-content { display: flex; align-items: center; gap: 16px; }
+.teal-action-card h3 { margin: 0 0 4px 0; font-size: 1.1rem; }
+.teal-action-card p { margin: 0; font-size: 0.9rem; opacity: 0.9; }
+.icon-bubble { width: 44px; height: 44px; border-radius: 12px; background: white; display: flex; align-items: center; justify-content: center; }
+.teal-bg { background: #e0f2f1; } .orange-bg { background: #ffedd5; }
+.mini-action { display: flex; align-items: center; gap: 12px; padding: 16px; cursor: pointer; }
+.mini-action h4 { margin: 0; font-size: 0.95rem; font-weight: 700; }
 
-/* This fixes the missing button */
-.btn-compact {
-  width: auto !important;
-  min-width: 150px !important; /* Forces it to have width */
-  padding: 12px 24px !important;
-  white-space: nowrap !important;
-}
-
-/* --- PROFILE GRID --- */
-.profile-grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.section-header { margin-bottom: 30px; }
-
-/* --- HERO SCREEN --- */
-.hero-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 60px; align-items: center; }
-.hero-content h1 { font-size: 4.5rem; line-height: 1; font-weight: 800; margin-bottom: 24px; letter-spacing: -2px; }
-.gradient-text { background: linear-gradient(to right, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.mini-badge {
-  display: inline-block; padding: 6px 12px; border-radius: 100px;
-  background: rgba(34, 211, 238, 0.1); border: 1px solid rgba(34, 211, 238, 0.2);
-  color: var(--primary); font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; margin-bottom: 20px;
-}
-.bmi-mini-card { display: inline-flex; align-items: center; gap: 16px; padding: 16px 24px; margin-bottom: 40px; }
-.bmi-mini-card .icon-circle { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; color: var(--text-main); }
-.bmi-text { display: flex; flex-direction: column; }
-.bmi-text .label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
-.bmi-text .value { font-size: 1.2rem; font-weight: 800; color: #fff; }
-.bmi-text .status { font-weight: 400; font-size: 1rem; color: var(--text-muted); margin-left: 5px; }
-.bmi-yellow .value { color: var(--warning); } .bmi-green .value { color: var(--success); } .bmi-red .value { color: var(--danger); }
-
-/* --- SIDEBAR HISTORY --- */
-.history-sidebar { padding: 24px; height: 500px; display: flex; flex-direction: column; }
-.sidebar-header { display: flex; align-items: center; gap: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 20px; }
-.history-list { overflow-y: auto; flex: 1; padding-right: 5px; }
-.history-item { padding: 16px; border-radius: 16px; background: rgba(255,255,255,0.03); margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; border: 1px solid transparent; }
-.history-item:hover { background: rgba(255,255,255,0.08); border-color: var(--glass-border); }
-.history-date { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
-.history-result { font-weight: 700; font-size: 1rem; color: #fff; }
-.arrow-icon { color: var(--text-muted); opacity: 0; transition: 0.2s; transform: translateX(-10px); }
-.history-item:hover .arrow-icon { opacity: 1; transform: translateX(0); }
+/* Timeline */
+.section-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.section-title-row h3 { margin: 0; font-size: 1.1rem; }
+.dots { color: var(--primary-teal); font-weight: 800; letter-spacing: 2px; }
+.recent-timeline-card { display: flex; align-items: center; gap: 16px; position: relative; }
+.timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--primary-teal); border: 3px solid #e0f2f1; flex-shrink: 0; }
+.timeline-content { flex: 1; }
+.time-text { margin: 0 0 4px 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+.symptoms-preview { margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-dark); text-transform: capitalize; }
+.btn-view-light { background: var(--bg-main); border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; color: var(--text-dark); cursor: pointer; }
 
 /* --- SYMPTOMS SCREEN --- */
-.header-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; }
-.section-title h2 { font-size: 3rem; margin: 0 0 10px 0; font-weight: 800; }
-.user-welcome { color: var(--text-muted); font-size: 1.1rem; }
-.search-wrapper { display: flex; align-items: center; gap: 12px; padding: 12px 20px; width: 350px; }
-.search-wrapper input { background: transparent; border: none; padding: 0; box-shadow: none; }
+.search-box { display: flex; align-items: center; gap: 12px; background: var(--white); padding: 14px 16px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+.search-box input { border: none; outline: none; background: transparent; width: 100%; font-size: 1rem; font-family: inherit; }
+.category-pills { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+.pill { padding: 8px 20px; background: var(--white); border-radius: 50px; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; cursor: pointer; border: 1px solid var(--border-light); }
+.pill.active { background: var(--primary-teal); color: white; border-color: var(--primary-teal); }
 
-.biomarker-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;
-  max-height: 60vh; overflow-y: auto; padding-bottom: 100px;
-}
-.marker-card { padding: 20px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
-.marker-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.07); }
-.marker-card.selected { background: rgba(34, 211, 238, 0.15); border-color: var(--primary); }
-.check-circle { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; color: var(--primary); transition: 0.2s; }
-.marker-card.selected .check-circle { border-color: var(--primary); background: rgba(34,211,238,0.2); }
-.marker-card span { font-weight: 600; font-size: 0.95rem; text-transform: capitalize; }
+.symptom-row-clean { display: flex; justify-content: space-between; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--border-light); cursor: pointer; }
+.symptom-name { font-size: 1.05rem; font-weight: 600; color: var(--text-dark); text-transform: capitalize; }
+.checkbox-square { width: 24px; height: 24px; border-radius: 6px; border: 2px solid var(--border-light); display: flex; align-items: center; justify-content: center; color: white; transition: 0.2s; background: white; }
+.checkbox-square.checked { background: var(--primary-teal); border-color: var(--primary-teal); }
 
-.floating-dock {
-  position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
-  width: 90%; max-width: 600px; padding: 16px 24px; display: flex; align-items: center;
-  justify-content: space-between; z-index: 100;
-}
-.dock-stats { display: flex; flex-direction: column; }
-.dock-stats .count { font-size: 1.5rem; font-weight: 800; color: #fff; line-height: 1; }
-.dock-stats .label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
-.dock-btns { display: flex; gap: 12px; }
+.sticky-action-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: var(--primary-teal); border-radius: 16px; padding: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 100; transition: 0.3s ease;}
+.btn-cancel { background: transparent; color: white; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; padding: 8px; }
+.selection-count { display: flex; flex-direction: column; align-items: center; color: white; }
+.count-num { font-weight: 800; font-size: 1.1rem; line-height: 1; }
+.count-text { font-size: 0.7rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; }
+.btn-analyze { background: var(--white); color: var(--primary-teal); border: none; padding: 10px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 
-/* --- LOADING --- */
-.loading-state { text-align: center; padding: 100px 0; }
-.neural-spinner-lg { position: relative; width: 120px; height: 120px; margin: 0 auto 40px; display: flex; align-items: center; justify-content: center; }
-.spinner-ring { position: absolute; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--primary); border-left-color: var(--secondary); }
-.ring-1 { width: 100%; height: 100%; animation: spin 2s linear infinite; }
-.ring-2 { width: 70%; height: 70%; animation: spin 3s linear infinite reverse; border-top-color: var(--secondary); border-left-color: var(--primary); }
-.spinner-core { color: #fff; animation: pulse 1.5s infinite; }
+/* --- RESULTS SCREEN --- */
+.results-teal-header { background: var(--primary-teal); padding: 24px 20px 80px; position: relative; }
+.shield-icon-wrapper { display: flex; justify-content: center; color: rgba(255,255,255,0.2); margin-top: 10px; }
+.results-content-card { background: var(--white); border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 30px 24px; margin-top: -60px; position: relative; min-height: 60vh; }
+.top-predicted-badge { background: var(--danger-red); color: white; padding: 8px 24px; border-radius: 50px; font-weight: 700; font-size: 0.9rem; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); white-space: nowrap; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); }
 
-/* --- RESULTS --- */
-.results-intro { display: flex; flex-direction: column; gap: 10px; margin-bottom: 40px; }
-.results-title-row { display: flex; justify-content: space-between; align-items: flex-end; }
-.results-title-row h2 { font-size: 3rem; margin: 0; font-weight: 800; line-height: 1; }
-.export-btn { display: flex; align-items: center; gap: 10px; padding: 12px 20px; background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid var(--glass-border); border-radius: 12px; cursor: pointer; font-weight: 600; transition: 0.2s; }
-.export-btn:hover { background: rgba(255,255,255,0.1); }
+.disease-item { display: flex; align-items: center; gap: 16px; padding: 20px; border-radius: 16px; background: #fafafa; border: 1px solid var(--border-light); margin-bottom: 12px; }
+.rank-circle { width: 32px; height: 32px; border-radius: 50%; background: #fee2e2; color: var(--danger-red); font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.disease-info { flex: 1; }
+.disease-info h4 { margin: 0 0 4px 0; font-size: 1.1rem; font-weight: 800; color: var(--text-dark); }
+.disease-info p { margin: 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+.disease-icon { font-size: 1.5rem; }
 
-.results-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 40px; }
-.glow-border { border: 1px solid var(--primary); box-shadow: 0 0 20px rgba(34, 211, 238, 0.1); }
-.primary-result { padding: 40px; }
-.result-clinical-meta { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: 700; font-size: 0.8rem; color: var(--primary); letter-spacing: 1px; }
-.primary-result h3 { font-size: 3.5rem; margin: 0 0 20px; font-weight: 800; line-height: 1; }
-.primary-result p { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 30px; }
-.confidence-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 100px; overflow: hidden; }
-.confidence-bar .fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+.recommendations-section { margin-top: 30px; }
+.recommendations-section h4 { font-size: 1.1rem; margin-bottom: 16px; }
+.recommendations-section ul { padding-left: 20px; color: var(--text-muted); font-weight: 600; line-height: 1.8; margin: 0; }
 
-.side-results { display: flex; flex-direction: column; gap: 16px; }
-.mini-result { padding: 24px; display: flex; flex-direction: column; justify-content: center; height: 100%; transition: 0.2s; }
-.mini-result:hover { background: rgba(255,255,255,0.08); }
-.mini-result .tier-tag { font-size: 0.7rem; color: var(--text-muted); font-weight: 700; margin-bottom: 8px; }
-.mini-result h4 { margin: 0; font-size: 1.25rem; font-weight: 700; }
+.action-buttons-vertical { display: flex; flex-direction: column; }
+.timestamp { font-size: 0.8rem; font-weight: 600; }
 
-.precautions-section { display: flex; gap: 24px; padding: 30px; margin-bottom: 40px; }
-.section-icon { width: 50px; height: 50px; background: rgba(245, 158, 11, 0.1); color: var(--warning); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.precautions-section h3 { color: var(--warning); margin: 0 0 10px 0; }
-.precautions-section p { margin: 0; color: #cbd5e1; line-height: 1.6; white-space: pre-line; }
+/* --- BOTTOM NAV --- */
+.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--white); display: flex; justify-content: space-around; padding: 12px 0 20px; border-top: 1px solid var(--border-light); z-index: 1000; border-top-left-radius: 20px; border-top-right-radius: 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.03); }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--text-muted); cursor: pointer; font-size: 0.75rem; font-weight: 600; transition: 0.2s; }
+.nav-item.active { color: var(--primary-teal); }
+.nav-item:hover { color: var(--primary-teal); }
 
-.medical-disclaimer { text-align: center; max-width: 600px; margin: 0 auto 60px; }
-.disclaimer-header { font-size: 0.75rem; font-weight: 800; color: var(--danger); letter-spacing: 1px; margin-bottom: 10px; }
-.medical-disclaimer p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; }
-.outline-btn { background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); padding: 10px 20px; border-radius: 100px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s; }
-.outline-btn:hover { border-color: var(--text-main); color: var(--text-main); }
-
-/* --- MODAL --- */
-.modal-card { width: 90%; max-width: 600px; padding: 32px; max-height: 85vh; overflow-y: auto; }
-.icon-circle-sm { width: 32px; height: 32px; background: rgba(34, 211, 238, 0.1); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-.close-btn { background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; }
-.modal-section { margin-bottom: 24px; }
-.modal-label { font-size: 0.7rem; font-weight: 800; color: var(--primary); letter-spacing: 1px; margin-bottom: 8px; }
-.modal-value { font-size: 1.1rem; color: #fff; font-weight: 500; }
-.prediction-item { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; margin-bottom: 8px; }
-.rank-badge { font-weight: 700; color: var(--text-muted); font-size: 0.9rem; }
-.disease-name { color: #fff; }
-.tags-container { display: flex; flex-wrap: wrap; gap: 8px; }
-.symptom-tag-static { background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 100px; font-size: 0.85rem; color: #cbd5e1; }
-.advice-box { background: rgba(245, 158, 11, 0.05); border-left: 3px solid var(--warning); padding: 16px; border-radius: 8px; margin-bottom: 24px; }
-.advice-box p { font-size: 0.95rem; line-height: 1.6; color: #e2e8f0; margin: 0; }
-
-/* --- ANIMATIONS --- */
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(0.95); } }
-.anim-fade-in { animation: fadeIn 0.6s ease forwards; }
-.anim-scale-in { animation: scaleIn 0.4s ease forwards; }
-.anim-fade-in-down { animation: fadeInDown 0.3s ease forwards; }
-
+/* Toasts and loading */
+.loading-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.pulse-loader { animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.95); } }
+.anim-fade-in { animation: fadeIn 0.4s ease forwards; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-@keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+.error-toast, .notification-toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 50px; color: white; font-weight: 600; z-index: 9999; }
+.error-toast { background: var(--danger-red); } .notification-toast { background: var(--success-green); }
 
-/* --- MOBILE RESPONSIVE (IMPROVED) --- */
-@media (max-width: 768px) {
-  .top-nav { padding: 10px; }
-  .nav-container { padding: 10px 15px; }
-  .brand .main-logo { font-size: 1.2rem; }
-  .user-indicator { width: 36px; height: 36px; }
-
-  .otp-overlay {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    background: #0B1120 !important; /* Solid background, hiding the app behind it */
-    z-index: 99999 !important;      /* Maximum priority */
-    padding: 0 !important;
-    display: flex !important;
-    align-items: flex-start !important; /* Start from top */
-    overflow-y: auto !important;    /* Allow scrolling within the overlay */
+/* ==========================================================================
+   DESKTOP RESPONSIVE DESIGN (The Magic Happens Here)
+   ========================================================================== */
+@media (min-width: 768px) {
+  .main-stage {
+    max-width: 100%;
+    width: calc(100% - 280px); /* Leave exactly 280px for the sidebar */
+    margin-left: 280px;
+    box-shadow: none;
   }
-
-  /* 2. Make the card fill that space completely */
-  .modal-card {
-    width: 100% !important;
-    min-height: 100vh !important;   /* Force full height */
-    max-width: none !important;
-    max-height: none !important;
-    border-radius: 0 !important;    /* No corners looks like a full page */
-    border: none !important;
-    background: transparent !important; /* Background is handled by overlay now */
-    box-shadow: none !important;
-    margin: 0 !important;
-    padding: 20px !important;
-  }
-
-  /* 3. Ensure the close button is easily clickable at the top right */
-  .close-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: rgba(255, 255, 255, 0.1);
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
+  
+  /* If on Login Screen, center the app completely and hide sidebar area */
+  .main-stage.is-auth {
+    width: 100%;
+    margin-left: 0;
     justify-content: center;
-    z-index: 100000 !important;
+    align-items: center;
+    background: linear-gradient(135deg, #e0f2f1 0%, #f4f7f9 100%);
+  }
+
+  .auth-screen {
+    max-width: 500px;
+    margin: 40px auto;
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.08);
+    height: auto;
+    flex: none;
+    border: 1px solid var(--border-light);
+  }
+
+  /* Keep Sidebar Open Always */
+  .sidebar-menu { transform: translateX(0); }
+  .sidebar-overlay { display: none !important; }
+  
+  /* Hide Mobile UI Elements */
+  .mobile-only { display: none !important; }
+  .bottom-nav { display: none !important; }
+
+  /* Desktop Grids & Spacing */
+  .content-container {
+    padding: 40px 60px 100px; /* Wider padding on desktop */
+  }
+
+  .desktop-row {
+    display: flex;
+    gap: 24px;
+    align-items: stretch;
   }
   
-  .main-stage { padding: 90px 15px 120px; }
-
-  /* Stack Grids */
-  .hero-grid { grid-template-columns: 1fr; gap: 40px; text-align: center; }
-  .hero-content h1 { font-size: 2.8rem; }
-  .hero-actions { justify-content: center; width: 100%; }
-  .hero-actions button { width: 100%; }
+  .desktop-col { flex: 1; }
   
-  /* Show history on mobile */
-  .history-sidebar { 
-    display: flex;           /* CHANGED from block to flex */
-    flex-direction: column;  /* Keeps header at top, list below */
-    width: 100%; 
-    height: 400px;           /* Fixed height ensures scrolling happens inside */
-    margin-top: 30px; 
+  .action-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
-  .history-item { justify-content: space-between; }
-  
-  /* Profile Page Stacking */
-  .profile-grid-layout { grid-template-columns: 1fr; }
-  .form-group-2, .form-group-3 { grid-template-columns: 1fr; }
-  
-  /* Symptoms Screen */
-  .header-row { flex-direction: column; align-items: flex-start; gap: 15px; margin-bottom: 20px; }
-  .search-wrapper { width: 100%; }
-  .biomarker-grid { grid-template-columns: 1fr 1fr; gap: 10px; } /* 2 Columns on mobile */
-  
-  /* Results Screen */
-  .results-title-row { flex-direction: column; align-items: flex-start; gap: 15px; }
-  .export-btn { width: 100%; justify-content: center; margin-top: 10px; }
-  .results-grid { grid-template-columns: 1fr; }
-  .primary-result { padding: 24px; }
-  .primary-result h3 { font-size: 2rem; }
-  .side-results { display: grid; grid-template-columns: 1fr; gap: 10px; }
-  
-  .precautions-section { flex-direction: column; padding: 20px; }
-  
-  /* Floating Dock */
-  .floating-dock { bottom: 20px; width: 94%; padding: 12px; flex-wrap: wrap; gap: 10px; justify-content: center; }
-  .dock-stats { width: 100%; text-align: center; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-  .dock-btns { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
-}
-  .photo-upload-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 24px;
-}
+  .full-span { grid-column: span 2; }
 
-.photo-label {
-  cursor: pointer;
-  display: block;
-}
+  /* Symptoms Checklist Grid */
+  .desktop-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .symptom-row-clean {
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 16px;
+    background: white;
+  }
 
-.photo-preview-box {
-  width: 120px;       /* Fixed width */
-  height: 120px;      /* Fixed height */
-  border-radius: 50%; /* Makes it a perfect circle */
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px dashed rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;   /* CRITICAL: Cuts off any part of the image outside the circle */
-  transition: 0.3s;
-}
+  /* History Grid */
+  .desktop-grid-history {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+  }
+  .history-grid-item { margin-bottom: 0; }
 
-.photo-preview-box:hover {
-  border-color: #22d3ee;
-  background: rgba(34, 211, 238, 0.1);
-}
+  /* Adjust Sticky Bar for Desktop Sidebar offset */
+  .sticky-action-bar {
+    left: calc(50% + 140px); /* 50% + half of sidebar width */
+    max-width: 600px;
+  }
 
-.photo-preview {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;  /* CRITICAL: Scales image to fill box without stretching */
-}
+  /* Results Card Styling */
+  .desktop-grid-results {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .results-content-card {
+    max-width: 900px;
+    margin: -60px auto 0;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+  }
+  
+  .desktop-w-auto { width: auto; display: inline-flex; padding-left: 30px; padding-right: 30px;}
 
-.photo-placeholder {
+  /* --- WIDE RESULTS SCREEN (Matches Photo Exactly) --- */
+.results-fullscreen-wrapper {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: #f4f7f9;
+  z-index: 4000;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #94a3b8;
-  gap: 5px;
-  font-size: 0.8rem;
 }
 
-.hidden-input {
-  display: none;
+.results-wide-card-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-action-bar-static {
-    width: 98% !important;       
-    max-width: none !important;
-    padding: 6px 4px !important; /* Almost zero padding on sides */
-    gap: 2px !important;         /* Tiny gap between items */
-    bottom: 20px !important;     /* Keep it slightly above bottom edge */
-  }
 
-  /* 2. Shrink 'Cancel' to bare minimum */
-  .btn-ghost {
-    padding: 6px 8px !important;
-    font-size: 0.75rem !important;
-    letter-spacing: 0 !important;
-  }
+.results-teal-header-wide {
+  width: 100%;
+  background: var(--primary-teal);
+  padding: 20px 20px 80px 20px;
+  position: relative;
+}
 
-  /* 3. Aggressively shrink 'Analyze' button */
-  .primary-button {
-    padding: 8px 12px !important;  /* Very tight padding */
-    font-size: 0.8rem !important;
-    min-width: 0 !important;       /* Allow it to shrink */
-    width: auto !important;
-    white-space: nowrap !important;
-    letter-spacing: 0 !important;
-  }
-  
-  /* 4. Shrink the Counter in the middle */
-  .capsule-stats span:first-child {
-    font-size: 1rem !important;
-  }
-  .capsule-stats span:last-child {
-    font-size: 0.5rem !important;
-    letter-spacing: 0 !important;
-  }
+.results-wide-card {
+  background: var(--white);
+  border-radius: 24px;
+  width: 90%;
+  max-width: 900px; /* Expands beautifully on Desktop */
+  margin-top: -60px; /* Overlaps the teal header */
+  padding: 40px 40px 20px 40px;
+  position: relative;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+}
+
+.disease-grid-wide {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.disease-item-wide {
+  display: flex; align-items: center; gap: 12px; padding: 16px;
+  background: #fafafa; border: 1px solid var(--border-light); border-radius: 16px;
+}
+
+.results-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 40px;
+  margin-top: 30px;
+}
+
+.recommendations-section-wide {
+  flex: 1;
+}
+
+.action-buttons-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 400px;
+}
+
+/* Gracefully snap back to mobile layout on small screens */
+@media (max-width: 768px) {
+  .disease-grid-wide { grid-template-columns: 1fr; }
+  .results-bottom-row { flex-direction: column; gap: 20px; align-items: flex-start; }
+  .action-buttons-column { max-width: 100%; width: 100%; }
+  .results-wide-card { padding: 40px 20px 20px; margin-top: -40px; width: 100%; border-radius: 30px 30px 0 0; min-height: 80vh;}
+}
 }
 `;
