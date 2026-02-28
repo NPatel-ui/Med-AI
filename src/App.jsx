@@ -540,9 +540,16 @@ export default function App() {
                       </div>
                     </div>
                     <div className="bmi-gauge">
-                      <div className="gauge-arc"></div>
-                      <div className="gauge-needle"></div>
-                    </div>
+                  <div className="gauge-arc"></div>
+                  {/* Dynamic needle with a smooth swinging animation */}
+                  <div 
+                    className="gauge-needle" 
+                    style={{ 
+                      transform: `rotate(${calculateNeedleAngle(bmiValue)}deg)`,
+                      transition: 'transform 1.2s cubic-bezier(0.22, 1, 0.36, 1)' 
+                    }}
+                  ></div>
+                </div>
                   </div>
                 )}
 
