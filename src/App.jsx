@@ -603,13 +603,7 @@ export default function App() {
               <input placeholder="Search Symptoms..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </div>
 
-            <div className="category-pills mb-4">
-              <span className="pill active">All</span>
-              <span className="pill">Fever</span>
-              <span className="pill">Body</span>
-              <span className="pill">Mind</span>
-            </div>
-
+           
             <div className="symptoms-list desktop-grid">
               {filteredSymptoms.map((s, idx) => (
                 <div key={s} className="symptom-row-clean" onClick={() => toggleSymptom(s)}>
