@@ -756,69 +756,80 @@ export default function App() {
           </div>
         )}
 
-        {/* --- RESULTS SCREEN (Wide Desktop Layout) --- */}
+        {/* --- RESULTS SCREEN --- */}
         {screen === "results" && (
-          <div className="results-fullscreen-wrapper anim-fade-in">
-            <div className="printable-report-capture results-wide-card-container">
-              
-              <div className="results-teal-header-wide" data-html2canvas-ignore="true">
-                <div className="clickable-icon text-white" style={{ position: 'absolute', left: '20px', top: '20px' }} onClick={() => setScreen("home")}>
-                   <Icons.ArrowLeft size={28} />
+          <div className="results-screen anim-fade-in printable-report-capture" style={{ width: '100%', display: 'flex', flexDirection: 'column', flex: 1, backgroundColor: 'var(--bg-main)' }}>
+            
+            {/* 1. The Dark Teal Background Header */}
+            <div style={{ background: 'var(--primary-teal)', padding: '24px 20px 80px 20px', width: '100%', boxSizing: 'border-box', position: 'relative' }}>
+              <div data-html2canvas-ignore="true" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div onClick={() => setScreen("home")} style={{ cursor: 'pointer', zIndex: 10, padding: '5px' }}>
+                   <Icons.ArrowLeft size={28} color="white" />
                 </div>
-                <h2 className="text-white text-center m-0" style={{ paddingTop: '20px', fontSize: '1.5rem' }}>Analysis Result</h2>
-                
+                <h2 style={{ margin: 0, color: 'white', fontSize: '1.25rem', fontWeight: 700 }}>Analysis Result</h2>
+                <div style={{ width: 28 }}></div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center', color: 'rgba(255,255,255,0.15)', marginTop: '16px' }}>
+                <Icons.Shield size={48} />
+              </div>
+            </div>
+
+            {/* 2. The Overlapping White Card */}
+            <div style={{ background: 'var(--white)', borderRadius: '30px 30px 0 0', padding: '40px 24px 24px', marginTop: '-50px', position: 'relative', flex: 1, boxShadow: '0 -10px 20px rgba(0,0,0,0.05)' }}>
+              
+              {/* Floating Red Badge */}
+              <div style={{ background: 'var(--danger-red)', color: 'white', padding: '8px 24px', borderRadius: '50px', fontWeight: 700, fontSize: '0.9rem', position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', boxShadow: '0 4px 10px rgba(239, 68, 68, 0.3)' }}>
+                Top 3 Predicted Diseases
+              </div>
+              
+              {/* Beautifully Styled Disease Cards */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {results.slice(0, 3).map((r, i) => {
+                  const probs = ["78%", "65%", "54%"];
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', borderRadius: '16px', background: '#fafafa', border: '1px solid var(--border-light)' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--danger-light)', color: 'var(--danger-red)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.1rem' }}>
+                        {i + 1}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-dark)' }}>{r}</h4>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                          Probability: <span style={{ color: i === 0 ? 'var(--danger-red)' : 'var(--accent-orange)' }}>{probs[i] || '50%'}</span>
+                        </p>
+                      </div>
+                      <div style={{ fontSize: '1.5rem' }}>🦠</div>
+                    </div>
+                  );
+                })}
               </div>
 
-              <div className="results-wide-card">
-                <div className="top-predicted-badge">Top 3 Predicted Diseases</div>
-                
-                <div className="disease-grid-wide mt-4">
-                  {results.slice(0, 3).map((r, i) => {
-                    const probs = ["78%", "65%", "54%"];
-                    return (
-                      <div key={i} className="disease-item-wide">
-                        <div className="rank-circle">{i + 1}</div>
-                        <div className="disease-info">
-                          <h4 className="m-0 text-md">{r}</h4>
-                          <p className="m-0 text-sm font-semibold text-muted">
-                            Probability: <span className={i === 0 ? 'text-red' : 'text-orange'}>{probs[i] || '50%'}</span>
-                          </p>
-                        </div>
-                        <div className="text-2xl">🦠</div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="results-bottom-row mt-4">
-                  <div className="recommendations-section mt-4">
-                <h4 className="text-md m-0 mb-3">Recommended Next Steps</h4>
+              {/* Dynamic Recommendations Box */}
+              <div style={{ marginTop: '24px', background: '#fafafa', borderRadius: '16px', padding: '20px', border: '1px solid var(--border-light)' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: 'var(--text-dark)' }}>Recommended Next Steps</h4>
                 {Array.isArray(precautions) ? (
-                  <ul className="rec-list">
-                    {precautions.map((p, i) => <li key={i} style={{marginBottom: '6px'}}>{p}</li>)}
+                  <ul style={{ paddingLeft: '20px', color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1.8, margin: 0 }}>
+                    {precautions.map((p, idx) => <li key={idx}>{p}</li>)}
                   </ul>
                 ) : (
-                  <p className="text-muted m-0" style={{ lineHeight: '1.6', fontSize: '0.9rem', fontWeight: 600 }}>
-                    {precautions || "Consult a healthcare professional."}
+                  <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 600, fontSize: '0.9rem' }}>
+                    {precautions || "Rest, avoid smoke, hydration. Please consult a healthcare professional."}
                   </p>
                 )}
               </div>
 
-                  <div className="action-buttons-column" data-html2canvas-ignore="true">
-                    <button className="btn-outline-teal full-width mb-3 center-flex gap-2" onClick={exportReport}>
-                      <Icons.Download size={20} /> Export Report
-                    </button>
-                    <button className="btn-teal-primary full-width" onClick={() => setScreen("home")} style={{ background: '#11322A', border: 'none' }}>
-                      Return to Dashboard
-                    </button>
-                  </div>
-                </div>
-                
-                <p className="text-center text-xs text-muted mt-4">
-                  Date: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                </p>
+              {/* Buttons */}
+              <div data-html2canvas-ignore="true" style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' }}>
+                <button className="btn-outline-teal full-width" onClick={exportReport} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                  <Icons.Download size={20} /> Export Report
+                </button>
+                <button className="btn-teal-primary full-width" onClick={() => setScreen("home")}>
+                  Return to Dashboard
+                </button>
               </div>
               
+              <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                Date: {new Date().toLocaleDateString('en-GB')}, {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+              </p>
             </div>
           </div>
         )}
