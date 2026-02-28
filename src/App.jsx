@@ -1353,7 +1353,9 @@ body { margin: 0; background-color: var(--bg-main); font-family: 'Plus Jakarta S
   .action-buttons-column { max-width: 100%; width: 100%; }
   .results-wide-card { padding: 40px 20px 20px; margin-top: -40px; width: 100%; border-radius: 30px 30px 0 0; min-height: 80vh;}
 }
-  .error-toast { background: var(--danger-red); } .notification-toast { background: var(--success-green); }
+  
+}
+.error-toast { background: var(--danger-red); } .notification-toast { background: var(--success-green); }
 
 /* Remove Desktop Overrides to strictly keep it as a mobile simulator */
 @media (max-width: 480px) {
@@ -1384,4 +1386,4 @@ body { margin: 0; background-color: var(--bg-main); font-family: 'Plus Jakarta S
     overflow-y: visible !important;
   }
 }
-`;
+`; 
