@@ -868,9 +868,13 @@ export default function App() {
                       <input type="password" value={passwordData.confirm} onChange={(e) => setPasswordData({...passwordData, confirm: e.target.value})} className="light-input" placeholder="••••••••" />
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-                    <button className="btn-teal-primary" onClick={handleChangePassword} style={{ padding: '12px', flex: 1, fontSize: '0.9rem' }}>Update Password</button>
-                    <button className="btn-outline-teal" onClick={() => { setIsChangingPassword(false); setPasswordData({current: "", new: "", confirm: ""}); }} style={{ padding: '12px', fontSize: '0.9rem' }}>Cancel</button>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '16px', flexWrap: 'wrap' }}>
+                    <button className="btn-teal-primary" onClick={handleChangePassword} style={{ width: 'auto', padding: '12px 30px', minWidth: '180px', fontSize: '0.95rem' }}>
+                      Update Password
+                    </button>
+                    <button className="btn-outline-teal" onClick={() => { setIsChangingPassword(false); setPasswordData({current: "", new: "", confirm: ""}); }} style={{ width: 'auto', padding: '12px 30px', minWidth: '180px', fontSize: '0.95rem' }}>
+                      Cancel
+                    </button>
                   </div>
                 </div>
               )}
