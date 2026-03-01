@@ -248,6 +248,22 @@ export default function App() {
     }
   };
 
+  // --- NEW: FORGOT PASSWORD FROM PROFILE ---
+  const handleProfileForgotPassword = async () => {
+    setError(null);
+    try {
+      if (currentUser && currentUser.email) {
+        // Automatically uses the logged-in user's email
+        await sendPasswordResetEmail(auth, currentUser.email);
+        setNotification("Reset link sent! Check your email.");
+        setIsChangingPassword(false); // Closes the menu
+        setPasswordData({ current: "", new: "", confirm: "" });
+      }
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const navigateTo = (scr) => {
     setScreen(scr);
     setViewingHistoryItem(null);
@@ -855,7 +871,12 @@ export default function App() {
               {isChangingPassword && (
                 <div className="anim-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div>
-                    <label className="input-label">Current Password</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label className="input-label" style={{ margin: 0 }}>Current Password</label>
+                      <button className="text-link-teal" onClick={handleProfileForgotPassword} style={{ fontSize: '0.8rem', fontWeight: 600, padding: 0 }}>
+                        Forgot Password ?
+                      </button>
+                    </div>
                     <input type="password" value={passwordData.current} onChange={(e) => setPasswordData({...passwordData, current: e.target.value})} className="light-input" placeholder="••••••••" />
                   </div>
                   <div className="form-group-2">
