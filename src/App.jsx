@@ -12,7 +12,7 @@ import {
   EmailAuthProvider,
   updateEmail,
   sendEmailVerification,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { 
   getFirestore, 
@@ -75,6 +75,8 @@ export default function App() {
   const [notification, setNotification] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({ current: "", new: "", confirm: "" });
   
   const [isNewUser, setIsNewUser] = useState(false);
   const [loginData, setLoginData] = useState({ email: "", password: "" });
@@ -214,6 +216,35 @@ export default function App() {
       }
     } catch (err) {
       setError("Failed to update profile.");
+    }
+  };
+
+  // --- NEW: CHANGE PASSWORD SECURELY ---
+  const handleChangePassword = async () => {
+    setError(null);
+    if (!passwordData.current || !passwordData.new || !passwordData.confirm) {
+      setError("Please fill in all password fields."); return;
+    }
+    if (passwordData.new !== passwordData.confirm) {
+      setError("New passwords do not match!"); return;
+    }
+    if (passwordData.new.length < 6) {
+      setError("New password must be at least 6 characters."); return;
+    }
+
+    try {
+      // 1. Re-authenticate to prove they know the current password
+      const credential = EmailAuthProvider.credential(currentUser.email, passwordData.current);
+      await reauthenticateWithCredential(currentUser, credential);
+      
+      // 2. Update to the new password
+      await updatePassword(currentUser, passwordData.new);
+      
+      setNotification("Password updated successfully!");
+      setIsChangingPassword(false);
+      setPasswordData({ current: "", new: "", confirm: "" }); // Clear the fields
+    } catch (err) {
+      setError(err.message === "Firebase: Error (auth/invalid-credential)." ? "Incorrect current password." : err.message);
     }
   };
 
@@ -808,6 +839,41 @@ export default function App() {
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* Security Card */}
+            <div className="white-card mb-4" style={{ position: 'relative', zIndex: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isChangingPassword ? '16px' : '0' }}>
+                <h4 className="m-0" style={{ color: 'var(--text-dark)' }}>Security</h4>
+                {!isChangingPassword && (
+                  <button className="text-link-teal" onClick={() => setIsChangingPassword(true)} style={{ fontSize: '0.85rem' }}>
+                    Change Password
+                  </button>
+                )}
+              </div>
+
+              {isChangingPassword && (
+                <div className="anim-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label className="input-label">Current Password</label>
+                    <input type="password" value={passwordData.current} onChange={(e) => setPasswordData({...passwordData, current: e.target.value})} className="light-input" placeholder="••••••••" />
+                  </div>
+                  <div className="form-group-2">
+                    <div>
+                      <label className="input-label">New Password</label>
+                      <input type="password" value={passwordData.new} onChange={(e) => setPasswordData({...passwordData, new: e.target.value})} className="light-input" placeholder="••••••••" />
+                    </div>
+                    <div>
+                      <label className="input-label">Confirm New</label>
+                      <input type="password" value={passwordData.confirm} onChange={(e) => setPasswordData({...passwordData, confirm: e.target.value})} className="light-input" placeholder="••••••••" />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                    <button className="btn-teal-primary" onClick={handleChangePassword} style={{ padding: '12px', flex: 1, fontSize: '0.9rem' }}>Update Password</button>
+                    <button className="btn-outline-teal" onClick={() => { setIsChangingPassword(false); setPasswordData({current: "", new: "", confirm: ""}); }} style={{ padding: '12px', fontSize: '0.9rem' }}>Cancel</button>
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Action Buttons */}
