@@ -175,6 +175,8 @@ PRECAUTION_TAGS = {
 }
 
 # ================= HELPERS =================
+import warnings # Add this at the top of main.py if it's not there!
+
 def build_input_vector(selected_symptoms: List[str]):
     if not SYMPTOMS or not scaler:
         return []
@@ -182,7 +184,11 @@ def build_input_vector(selected_symptoms: List[str]):
     for s in selected_symptoms:
         if s in SYMPTOMS:
             vector[SYMPTOMS.index(s)] = 1
-    return scaler.transform([vector])
+            
+    # Safely silence the annoying scikit-learn feature name warning
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        return scaler.transform([vector])
 
 def generate_precaution_text(tags: List[str]) -> str:
     if not tags:
@@ -193,14 +199,20 @@ def generate_precaution_text(tags: List[str]) -> str:
     if not gemini_model:
         return static_message
 
-    prompt = f"Convert these precaution tags into calm, human-friendly guidance (max 2 sentences): {', '.join(tags)}"
+    # NEW STRICT PROMPT: Tells Gemini to skip the intro and just give the advice
+    prompt = f"Act as a caring medical assistant. Give 2 direct, calm sentences of advice using these topics: {', '.join(tags)}. Start immediately with the advice. Do not use introductory phrases like 'Here is the advice'."
 
     try:
+        # Removed the token limit so it stops cutting off!
         response = gemini_model.generate_content(
             prompt,
-            generation_config={"temperature": 0.6, "max_output_tokens": 120}
+            generation_config={"temperature": 0.5} 
         )
-        return response.text.strip() if response.text else static_message
+        
+        # Clean out any bold Markdown stars Gemini might try to add
+        clean_text = response.text.replace("**", "").replace("*", "").strip()
+        return clean_text if clean_text else static_message
+        
     except Exception as e:
         print("⚠️ Gemini error:", e)
         return static_message
