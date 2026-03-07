@@ -42,26 +42,25 @@ except Exception as e:
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 gemini_model = None
 
-def get_gemini_model():
-    """Helper to ensure model is configured even if env vars synced late"""
-    global gemini_model
-    if gemini_model:
-        return gemini_model
-    
-    key = os.getenv("GEMINI_API_KEY")
-    if key:
-        try:
-            genai.configure(api_key=key)
-            # Hardcoding 1.5-pro is more stable for complex JSON tasks like PDF parsing
-            gemini_model = genai.GenerativeModel('gemini-1.5-pro')
-            print("✅ Gemini AI configured successfully with gemini-1.5-pro")
-            return gemini_model
-        except Exception as e:
-            print(f"⚠️ Gemini Config Error: {e}")
-    return None
-
-# Initial attempt at startup
-get_gemini_model()
+if GEMINI_API_KEY:
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        
+        # 🚀 AUTO-DISCOVERY: Ask the Google server exactly which models are valid
+        valid_model_name = "gemini-pro" # Ultimate fallback
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                valid_model_name = m.name # Grab the exact formatted name the server requires
+                if 'flash' in m.name.lower(): 
+                    break # Stop looking if we find the fast 'flash' model
+                    
+        gemini_model = genai.GenerativeModel(valid_model_name)
+        print(f"✅ Gemini AI initialized using exact model: {valid_model_name}")
+        
+    except Exception as e:
+        print(f"⚠️ Gemini Config Error: {e}")
+else:
+    print("⚠️ GEMINI_API_KEY not found. Using fallback precautions.")
 
 # ================= SMTP EMAIL SETUP =================
 SMTP_EMAIL = os.getenv("SMTP_EMAIL")
@@ -130,6 +129,33 @@ app.add_middleware(
 )
 
 # ================= REQUEST SCHEMAS =================
+
+# ================= USER ROLE SCHEMA =================
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+    name: str
+    role: str  # "user" or "doctor"
+
+
+# ================= CONSULTATION =================
+
+class SendReportRequest(BaseModel):
+    patient_id: str
+    doctor_id: str
+    report_url: str
+    summary: str
+
+
+# ================= CHAT =================
+
+class MessageRequest(BaseModel):
+    consultation_id: str
+    sender_id: str
+    sender_role: str
+    message: str
+
 class PredictRequest(BaseModel):
     symptoms: List[str]
     user_email: Optional[str] = None 
@@ -176,8 +202,6 @@ PRECAUTION_TAGS = {
 }
 
 # ================= HELPERS =================
-import warnings # Add this at the top of main.py if it's not there!
-
 def build_input_vector(selected_symptoms: List[str]):
     if not SYMPTOMS or not scaler:
         return []
@@ -185,11 +209,7 @@ def build_input_vector(selected_symptoms: List[str]):
     for s in selected_symptoms:
         if s in SYMPTOMS:
             vector[SYMPTOMS.index(s)] = 1
-            
-    # Safely silence the annoying scikit-learn feature name warning
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", UserWarning)
-        return scaler.transform([vector])
+    return scaler.transform([vector])
 
 def generate_precaution_text(tags: List[str]) -> str:
     if not tags:
@@ -200,20 +220,14 @@ def generate_precaution_text(tags: List[str]) -> str:
     if not gemini_model:
         return static_message
 
-    # NEW STRICT PROMPT: Tells Gemini to skip the intro and just give the advice
-    prompt = f"Act as a caring medical assistant. Give 2 direct, calm sentences of advice using these topics: {', '.join(tags)}. Start immediately with the advice. Do not use introductory phrases like 'Here is the advice'."
+    prompt = f"Convert these precaution tags into calm, human-friendly guidance (max 2 sentences): {', '.join(tags)}"
 
     try:
-        # Removed the token limit so it stops cutting off!
         response = gemini_model.generate_content(
             prompt,
-            generation_config={"temperature": 0.5} 
+            generation_config={"temperature": 0.6, "max_output_tokens": 120}
         )
-        
-        # Clean out any bold Markdown stars Gemini might try to add
-        clean_text = response.text.replace("**", "").replace("*", "").strip()
-        return clean_text if clean_text else static_message
-        
+        return response.text.strip() if response.text else static_message
     except Exception as e:
         print("⚠️ Gemini error:", e)
         return static_message
@@ -279,6 +293,44 @@ def reset_password(req: ResetPasswordRequest):
     except Exception as e:
         print("Reset Error:", e)
         raise HTTPException(status_code=500, detail="Failed to reset password")
+    
+@app.get("/auth/user-role/{uid}")
+def get_user_role(uid: str):
+
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not initialized")
+
+    doc = db.collection("users").document(uid).get()
+
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return doc.to_dict()
+    
+@app.post("/auth/register")
+def register_user(req: RegisterRequest):
+
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not initialized")
+
+    try:
+        user = auth.create_user(
+            email=req.email,
+            password=req.password
+        )
+
+        db.collection("users").document(user.uid).set({
+            "email": req.email,
+            "name": req.name,
+            "role": req.role,
+            "created_at": datetime.utcnow()
+        })
+
+        return {"message": "User registered", "uid": user.uid}
+
+    except Exception as e:
+        print("Register Error:", e)
+        raise HTTPException(status_code=500, detail="Registration failed")
 
 # ================= PREDICT ENDPOINT =================
 @app.post("/predict")
@@ -322,6 +374,168 @@ def predict(req: PredictRequest):
         print("Prediction Error:", e)
         return {"predictions": ["Error"], "precaution": "An internal error occurred."}
 
+# ================= CONSULTATION =================
+
+@app.post("/consultation/send")
+def send_report(req: SendReportRequest):
+
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not initialized")
+
+    try:
+        consult_ref = db.collection("consultations").add({
+            "patient_id": req.patient_id,
+            "doctor_id": req.doctor_id,
+            "report_url": req.report_url,
+            "summary": req.summary,
+            "status": "pending",
+            "created_at": datetime.utcnow()
+        })
+
+        return {
+    "message": "Report sent to doctor",
+    "consultation_id": consult_ref[1].id
+}
+
+    except Exception as e:
+        print("Consultation Error:", e)
+        raise HTTPException(status_code=500, detail="Failed to send report")
+    
+@app.get("/doctor/consultations/{doctor_id}")
+def get_doctor_consultations(doctor_id: str):
+
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not initialized")
+
+    try:
+        docs = db.collection("consultations")\
+            .where("doctor_id", "==", doctor_id)\
+            .stream()
+
+        consultations = []
+
+        for d in docs:
+            data = d.to_dict()
+            data["id"] = d.id
+            consultations.append(data)
+
+        return consultations
+
+    except Exception as e:
+        print("Doctor Consultation Error:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch consultations")
+    
+@app.get("/patient/consultations/{patient_id}")
+def get_patient_consultations(patient_id: str):
+
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not initialized")
+
+    try:
+        docs = db.collection("consultations")\
+            .where("patient_id", "==", patient_id)\
+            .stream()
+
+        consultations = []
+
+        for d in docs:
+            data = d.to_dict()
+            data["id"] = d.id
+            consultations.append(data)
+
+        return consultations
+
+    except Exception as e:
+        print("Patient Consultation Error:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch consultations")
+    
+@app.put("/consultation/status/{consultation_id}")
+def update_status(consultation_id: str, status: str):
+
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not initialized")
+
+    # Validate allowed status values
+    valid_status = ["pending", "accepted", "rejected", "completed"]
+
+    if status not in valid_status:
+        raise HTTPException(status_code=400, detail="Invalid status value")
+
+    try:
+        consultation_ref = db.collection("consultations").document(consultation_id)
+        consultation = consultation_ref.get()
+
+        if not consultation.exists:
+            raise HTTPException(status_code=404, detail="Consultation not found")
+
+        consultation_ref.update({
+            "status": status,
+            "updated_at": datetime.utcnow()
+        })
+
+        return {
+            "message": "Consultation status updated",
+            "consultation_id": consultation_id,
+            "new_status": status
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        print("Status Update Error:", e)
+        raise HTTPException(status_code=500, detail="Failed to update consultation status")    
+# ================= CHAT SYSTEM =================
+
+@app.post("/chat/send")
+def send_message(req: MessageRequest):
+
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not initialized")
+
+    try:
+        db.collection("chats")\
+          .document(req.consultation_id)\
+          .collection("messages")\
+          .add({
+              "sender_id": req.sender_id,
+              "sender_role": req.sender_role,
+              "message": req.message,
+              "timestamp": datetime.utcnow()
+          })
+
+        return {"message": "Message sent"}
+
+    except Exception as e:
+        print("Chat Error:", e)
+        raise HTTPException(status_code=500, detail="Failed to send message")
+    
+@app.get("/chat/{consultation_id}")
+def get_messages(consultation_id: str):
+
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not initialized")
+
+    try:
+        messages = db.collection("chats")\
+            .document(consultation_id)\
+            .collection("messages")\
+            .order_by("timestamp")\
+            .stream()
+
+        result = []
+
+        for m in messages:
+            data = m.to_dict()
+            data["id"] = m.id
+            result.append(data)
+
+        return result
+
+    except Exception as e:
+        print("Fetch Chat Error:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch messages")
+
 # ================= SYMPTOMS & HEALTH =================
 @app.get("/symptoms")
 def get_symptoms():
@@ -337,17 +551,6 @@ def health():
 # ================= PDF PARSING =================
 @app.post("/parse-report")
 async def parse_medical_report(file: UploadFile = File(...)):
-    model_instance = get_gemini_model()
-    if not model_instance:
-            print("❌ Gemini model is not initialized.")
-            raise HTTPException(status_code=500, detail="Gemini AI is not configured. Please check your API key in Render.")
-
-    print("🤖 Sending text to Gemini AI...")
-        # ADDED: response_mime_type forces Gemini to return valid JSON
-    response = model_instance.generate_content(
-            prompt,
-            generation_config={"response_mime_type": "application/json"}
-        )
     if not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
     
@@ -399,18 +602,14 @@ async def parse_medical_report(file: UploadFile = File(...)):
         
         print("🤖 Sending text to Gemini AI...")
         response = gemini_model.generate_content(prompt)
-        print(f"✅ Received response from Gemini. Cleaning data...")
-        raw_output = response.text.strip()
         
-        if not raw_output:
-            raise HTTPException(status_code=500, detail="AI returned an empty response.")
-
-        # Clean markdown if JSON mode didn't strip it
-        cleaned_response = raw_output.replace("```json", "").replace("```", "").strip()
+        print(f"✅ Received response from Gemini. Cleaning data...")
+        # Clean the response just in case Gemini adds markdown code blocks
+        cleaned_response = response.text.replace("```json", "").replace("```", "").strip()
         
         report_data = json.loads(cleaned_response)
         print("🎉 JSON parsed successfully! Sending to React.")
-        return report_data 
+        return report_data
 
     except json.JSONDecodeError as e:
         print(f"🔴 JSON ERROR: Gemini returned invalid format. Raw text: {response.text}")
@@ -419,4 +618,3 @@ async def parse_medical_report(file: UploadFile = File(...)):
     except Exception as e:
         print(f"🔴 EXACT ERROR PARSING REPORT: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to analyze the report: {str(e)}")
-
