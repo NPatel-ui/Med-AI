@@ -21,7 +21,7 @@ import {
   getDoc 
 } from "firebase/firestore";
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://med-ai-1-is35.onrender.com";;
+const API_BASE = import.meta.env.VITE_API_URL || "https://med-ai-1-is35.onrender.com";
 
 // --- FIREBASE INIT ---
 let firebaseConfig = {
@@ -578,6 +578,8 @@ if (labSnap.exists()) {
     }
   }
 
+  
+
   const exportReport = async () => {
     // Find the currently active report container
     const captureElement = document.querySelector(".printable-report-capture");
@@ -588,31 +590,63 @@ if (labSnap.exists()) {
     }
 
     try {
-      setNotification("Generating image report...");
+      setNotification("Generating high-res report...");
+      
+      // NEW: Wait a split second to ensure all CSS fade-in animations are 100% finished
+      // (Capturing mid-animation causes ghosting/blurriness)
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       const canvas = await html2canvas(captureElement, {
-        scale: 2, // Double resolution for crystal clear text
-        backgroundColor: "#F4F7F9", // Matches your app's background theme
+        scale: 4, // INCREASED: 4x resolution for crystal clear, retina-quality text
+        backgroundColor: "#F4F7F9", 
         useCORS: true,
-        windowWidth: 480 // Forces desktop view to format nicely like the mobile card
+        allowTaint: true
+        // REMOVED: windowWidth: 480 (This was squishing the canvas and causing blur)
       });
 
-      // Convert to image and download
-      const image = canvas.toDataURL("image/png");
+      // Convert to image and download in maximum quality
+      const image = canvas.toDataURL("image/png", 1.0);
       const link = document.createElement("a");
       link.href = image;
-      link.download = `MedAI_Report_${userProfile.name ? userProfile.name.replace(/\s+/g, '_') : 'User'}.png`;
+      // Added a timestamp so multiple downloads don't overwrite each other
+      link.download = `MedAI_Report_${userProfile.name ? userProfile.name.replace(/\s+/g, '_') : 'User'}_${new Date().getTime()}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
     } catch (err) {
       console.error(err);
-      setError("Failed to generate image.");
+      setError("Failed to generate high-res image.");
     }
   };
 
   const filteredSymptoms = symptoms.filter(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
+  const handleViewActivity = (item) => {
+    try {
+      if (item.type === 'lab_report') {
+        setParsedReport(item.reportData || { summary: "No data found.", abnormal_results: [] });
+        setScreen("report_results");
+      } else {
+        // Fallbacks so old history entries don't crash the results page
+        const safeResults = Array.isArray(item.allPredictions) ? item.allPredictions : (item.topMatch ? [item.topMatch] : ["Analysis Complete"]);
+        setResults(safeResults);
+        
+        setPrecautions(item.precautions || "Please consult a healthcare professional.");
+        
+        // Re-populate symptoms safely
+        const restoredSymptoms = {};
+        if (Array.isArray(item.symptoms)) {
+          item.symptoms.forEach(s => restoredSymptoms[s] = true);
+        }
+        setSelectedSymptoms(restoredSymptoms);
+        
+        setScreen("results");
+      }
+    } catch (err) {
+      console.error("Error opening history item:", err);
+      setError("Could not open this record.");
+    }
+  };
 
   // --- NEW: COMBINE ALL HISTORY FOR DASHBOARD ---
   const allActivity = [...history, ...labHistory].sort((a, b) => {
@@ -873,8 +907,8 @@ if (labSnap.exists()) {
       <div 
         key={idx} 
         className="white-card recent-timeline-card mb-3 anim-slide-in" 
-        style={{ animationDelay: `${idx * 0.12}s`, cursor: 'pointer' }}
-        onClick={() => setViewingHistoryItem(activity)}
+        style={{ animationDelay: `${idx * 0.12}s`, cursor: 'pointer', position: 'relative', zIndex: 40 }}
+        onClick={() => handleViewActivity(activity)}
       >
         <div className="timeline-dot" style={{
           borderColor: activity.type === 'lab_report' ? '#ffedd5' : '#e0f2f1', 
@@ -893,7 +927,13 @@ if (labSnap.exists()) {
           </p>
         </div>
         
-        <button className="btn-view-pill">View</button>
+        <button 
+          className="btn-view-light" 
+          style={{ position: 'relative', zIndex: 50 }} 
+          onClick={(e) => { e.stopPropagation(); handleViewActivity(activity); }}
+        >
+          View
+        </button>
       </div>
     ))
   ) : (
@@ -988,7 +1028,7 @@ if (labSnap.exists()) {
               <input placeholder="Search Reports..." />
             </div>
 
-            {/* --- NEW: TAB SWITCHER --- */}
+            {/* --- TAB SWITCHER --- */}
             <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
               <button onClick={() => setHistoryTab('assessment')} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: historyTab === 'assessment' ? 'var(--primary-teal)' : 'white', color: historyTab === 'assessment' ? 'white' : 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', transition: '0.2s' }}>
                 Assessments
@@ -1002,13 +1042,14 @@ if (labSnap.exists()) {
               {/* TAB 1: ASSESSMENTS */}
               {historyTab === 'assessment' && (
                 history.length > 0 ? history.map((item, idx) => (
-                  <div key={idx} className="white-card mb-3 history-grid-item" onClick={() => setViewingHistoryItem(item)} style={{cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                  <div key={idx} className="white-card mb-3 history-grid-item" onClick={() => handleViewActivity(item)} style={{cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative', zIndex: 40}}>
                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
                        <div>
                           <p style={{margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600}}>{item.date}, {item.time}</p>
                           <h4 style={{margin: '4px 0 0 0', color: 'var(--text-dark)'}}>{item.topMatch || "Assessment Record"}</h4>
                        </div>
-                       <button className="btn-view-light" onClick={(e) => { e.stopPropagation(); setViewingHistoryItem(item); }}>View</button>
+                       {/* FIXED: Now correctly routes to Results */}
+                       <button className="btn-view-light" style={{ position: 'relative', zIndex: 50, padding: '8px 20px' }} onClick={(e) => { e.stopPropagation(); handleViewActivity(item); }}>View</button>
                     </div>
                     <div style={{display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px'}}>
                        {item.symptoms && item.symptoms.slice(0, 3).map((s, i) => (
@@ -1024,22 +1065,22 @@ if (labSnap.exists()) {
               {/* TAB 2: LAB REPORTS */}
               {historyTab === 'lab' && (
                 labHistory.length > 0 ? labHistory.map((item, idx) => (
-                  <div key={idx} className="white-card mb-3 history-grid-item" onClick={() => setViewingHistoryItem(item)} style={{cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '8px', borderLeft: '4px solid var(--accent-orange)'}}>
+                  <div key={idx} className="white-card mb-3 history-grid-item" onClick={() => handleViewActivity(item)} style={{cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '8px', borderLeft: '4px solid var(--accent-orange)', position: 'relative', zIndex: 40}}>
                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
                        <div>
                           <p style={{margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600}}>{item.date}, {item.time}</p>
                           <h4 style={{margin: '4px 0 0 0', color: 'var(--text-dark)'}}>Lab Report Analysis</h4>
                        </div>
-                       <button className="btn-view-light" onClick={(e) => { e.stopPropagation(); setViewingHistoryItem(item); }}>View</button>
+                       {/* FIXED: Now correctly routes to Lab Report Results */}
+                       <button className="btn-view-light" style={{ position: 'relative', zIndex: 50, padding: '8px 20px' }} onClick={(e) => { e.stopPropagation(); handleViewActivity(item); }}>View</button>
                     </div>
-                    <p style={{fontSize: '0.85rem', color: 'var(--text-muted)', margin: '4px 0 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{item.reportData?.summary}</p>
+                    <p style={{fontSize: '0.85rem', color: 'var(--text-muted)', margin: '4px 0 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{item.reportData?.summary || "Analysis complete."}</p>
                  </div>
                 )) : <p className="text-center text-muted mt-4">No lab report history found.</p>
               )}
             </div>
           </div>
         )}
-
       {/* --- PROFESSIONAL SAAS PROFILE PAGE --- */}
         {screen === "profile" && (
           <div className="profile-screen anim-fade-in content-container pb-120">
@@ -1185,7 +1226,7 @@ if (labSnap.exists()) {
                   <div className="card-header-row mb-4">
                     <h4 className="card-title-modern">Security & Login</h4>
                     {!isChangingPassword && (
-                      <button className="btn-view-pill" onClick={() => setIsChangingPassword(true)}>
+                      <button className="btn-premium-teal" onClick={() => setIsChangingPassword(true)}>
                         Change Password
                       </button>
                     )}
@@ -1317,145 +1358,175 @@ if (labSnap.exists()) {
 
         {/* --- LAB REPORT RESULTS SCREEN --- */}
         {screen === "report_results" && parsedReport && (
-          <div className="results-screen anim-fade-in content-container printable-report-capture" style={{ paddingBottom: '120px', backgroundColor: 'var(--bg-main)' }}>
-            <div className="dash-header mb-4">
-              <div data-html2canvas-ignore="true" style={{cursor: 'pointer', padding: '5px'}} onClick={() => setScreen("home")}>
-                <Icons.ArrowLeft size={28} className="text-dark" />
+          <div className="results-screen anim-fade-in content-container printable-report-capture" style={{ paddingBottom: '120px', backgroundColor: '#F4F7F9' }}>
+            
+            <div className="dash-header mb-4" data-html2canvas-ignore="true">
+              <div style={{cursor: 'pointer', padding: '5px'}} onClick={() => setScreen("home")}>
+                <Icons.ArrowLeft size={28} color="#1F2937" />
               </div>
-              <h2 className="header-title">Report Analysis</h2>
+              <h2 className="header-title" style={{ color: '#1F2937' }}>Report Analysis</h2>
               <div style={{width: 28}}></div>
             </div>
 
-            <div className="white-card mb-4" style={{ borderLeft: '4px solid var(--primary-teal)'}}>
-              <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-dark)' }}>AI Summary</h4>
-              <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.6 }}>{parsedReport.summary}</p>
+            <div className="white-card mb-4" style={{ borderLeft: '4px solid #004D40', backgroundColor: '#FFFFFF' }}>
+              <h4 style={{ margin: '0 0 8px 0', color: '#1F2937', fontWeight: 800 }}>AI Summary</h4>
+              <p style={{ margin: 0, color: '#4B5563', lineHeight: 1.6, fontWeight: 600 }}>{parsedReport.summary}</p>
             </div>
 
             <div className="section-title-row">
-              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Key Findings</h3>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1F2937', fontWeight: 800 }}>Key Findings</h3>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
               {parsedReport.abnormal_results && parsedReport.abnormal_results.length > 0 ? (
                 parsedReport.abnormal_results.map((item, idx) => (
                   <div key={idx} className="white-card" style={{ 
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', 
-                    borderLeft: item.status === 'high' ? '4px solid var(--danger-red)' : (item.status === 'low' ? '4px solid var(--accent-orange)' : '4px solid var(--success-green)') 
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', backgroundColor: '#FFFFFF',
+                    borderLeft: item.status === 'high' ? '4px solid #EF4444' : (item.status === 'low' ? '4px solid #F97316' : '4px solid #10B981') 
                   }}>
                     <div>
-                      <h4 style={{ margin: '0 0 4px 0', fontSize: '1.05rem', color: 'var(--text-dark)' }}>{item.test_name}</h4>
-                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>{item.simple_meaning}</p>
+                      <h4 style={{ margin: '0 0 4px 0', fontSize: '1.05rem', color: '#1F2937', fontWeight: 800 }}>{item.test_name}</h4>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: '#6B7280', fontWeight: 600 }}>{item.simple_meaning}</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ 
-                        fontSize: '1.3rem', fontWeight: 800, 
-                        color: item.status === 'high' ? 'var(--danger-red)' : (item.status === 'low' ? 'var(--accent-orange)' : 'var(--success-green)') 
+                        fontSize: '1.3rem', fontWeight: 900, 
+                        color: item.status === 'high' ? '#EF4444' : (item.status === 'low' ? '#F97316' : '#10B981') 
                       }}>
                         {item.value}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Normal: {item.normal_range}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#9CA3AF', fontWeight: 700 }}>Normal: {item.normal_range}</div>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="white-card text-center text-muted">All tested levels appear to be within normal ranges.</div>
+                <div className="white-card text-center" style={{ color: '#6B7280', backgroundColor: '#FFFFFF', fontWeight: 600 }}>All tested levels appear to be within normal ranges.</div>
               )}
             </div>
 
-            <div className="white-card mt-4" style={{ background: '#f0fdfa', border: '1px solid #ccfbf1' }}>
+            <div className="white-card mt-4" style={{ background: '#F0FDF4', border: '1px solid #A7F3D0' }}>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
                 <span style={{ fontSize: '1.2rem' }}>💡</span>
-                <h4 style={{ margin: 0, color: 'var(--primary-teal)' }}>Next Steps</h4>
+                <h4 style={{ margin: 0, color: '#004D40', fontWeight: 800 }}>Next Steps</h4>
               </div>
-              <p style={{ margin: 0, color: 'var(--text-dark)', lineHeight: 1.6, fontWeight: 500 }}>{parsedReport.recommendation}</p>
+              <p style={{ margin: 0, color: '#1F2937', lineHeight: 1.6, fontWeight: 600 }}>{parsedReport.recommendation}</p>
             </div>
             
             {/* Action Buttons */}
             <div data-html2canvas-ignore="true" style={{ display: 'flex', gap: '16px', marginTop: '24px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              
               <button className="btn-outline-teal" onClick={exportReport} style={{ flex: 1, minWidth: '150px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
-                <Icons.Download size={20} /> Download
+                <Icons.Download size={20} /> Export Report
               </button>
-
               <button className="btn-teal-primary" onClick={() => setScreen("home")} style={{ flex: 1, minWidth: '150px' }}>
                 Done
               </button>
-
             </div>
           </div>
         )}
 
-        {/* --- RESULTS SCREEN --- */}
+        {/* ==========================================================================
+            PREMIUM HIGH-CONTRAST RESULTS REPORT
+           ========================================================================== */}
         {screen === "results" && (
-          <div className="results-screen anim-fade-in printable-report-capture" style={{ width: '100%', display: 'flex', flexDirection: 'column', flex: 1, backgroundColor: 'var(--bg-main)' }}>
-            
-            {/* 1. The Dark Teal Background Header */}
-            <div style={{ background: 'var(--primary-teal)', padding: '24px 20px 80px 20px', width: '100%', boxSizing: 'border-box', position: 'relative' }}>
-              <div data-html2canvas-ignore="true" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div onClick={() => setScreen("home")} style={{ cursor: 'pointer', zIndex: 10, padding: '5px' }}>
-                   <Icons.ArrowLeft size={28} color="white" />
+          <div className="results-screen anim-fade-in content-container" style={{ width: '100%', display: 'flex', flexDirection: 'column', flex: 1, backgroundColor: 'var(--bg-main)', paddingBottom: '120px' }}>
+
+            {/* 1. Teal Header Box (Non-printable) */}
+            <div data-html2canvas-ignore="true" style={{ background: 'var(--primary-teal)', padding: '24px 20px 80px 20px', width: '100%', boxSizing: 'border-box', margin: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div onClick={() => { setSelectedSymptoms({}); setScreen("home"); }} style={{ cursor: 'pointer', zIndex: 10, padding: '5px' }}>
+                    <Icons.ArrowLeft size={28} color="white" />
                 </div>
                 <h2 style={{ margin: 0, color: 'white', fontSize: '1.25rem', fontWeight: 700 }}>Analysis Result</h2>
                 <div style={{ width: 28 }}></div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'center', color: 'rgba(255,255,255,0.15)', marginTop: '16px' }}>
-                <Icons.Shield size={48} />
-              </div>
             </div>
 
-            {/* 2. The Overlapping White Card */}
-            <div style={{ background: 'var(--white)', borderRadius: '30px 30px 0 0', padding: '40px 24px 24px', marginTop: '-50px', position: 'relative', flex: 1, boxShadow: '0 -10px 20px rgba(0,0,0,0.05)' }}>
-              
-              {/* Floating Red Badge */}
-              <div style={{ background: 'var(--danger-red)', color: 'white', padding: '8px 24px', borderRadius: '50px', fontWeight: 700, fontSize: '0.9rem', position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', boxShadow: '0 4px 10px rgba(239, 68, 68, 0.3)' }}>
-                Top 3 Predicted Diseases
+            {/* 2. The Printable Report Card (Hardcoded HEX colors fix html2canvas washout bug) */}
+            <div className="printable-report-capture" style={{ background: '#FFFFFF', borderRadius: '24px', padding: '40px 30px', marginTop: '-50px', position: 'relative', flex: 1, boxShadow: '0 10px 30px rgba(0,0,0,0.08)', boxSizing: 'border-box', width: '95%', maxWidth: '800px', alignSelf: 'center', color: '#1F2937' }}>
+
+             {/* Report Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #E5E7EB', paddingBottom: '20px', marginBottom: '24px' }}>
+                 <div>
+                   <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: '#1F2937', letterSpacing: '-0.5px' }}>Medical AI Report</h1>
+                   <p style={{ margin: '4px 0 0 0', fontSize: '0.9rem', color: '#6B7280', fontWeight: 600 }}>Symptom Assessment Summary</p>
+                 </div>
+                 <div style={{ textAlign: 'right' }}>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Report ID</p>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '1rem', color: '#1F2937', fontWeight: 700 }}>#{new Date().getTime().toString().slice(-6)}</p>
+                 </div>
               </div>
               
-              {/* Beautifully Styled Disease Cards */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' }}>
+              {/* Patient Details Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '20px', background: '#F8FAFC', padding: '20px', borderRadius: '16px', marginBottom: '32px', border: '1px solid #E5E7EB' }}>
+                <div>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Patient Name</p>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '1.1rem', color: '#1F2937', fontWeight: 800 }}>{userProfile.name || 'User'}</p>
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Age / Gender</p>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '1.1rem', color: '#1F2937', fontWeight: 800 }}>{userProfile.age || '--'} / {userProfile.gender ? userProfile.gender.charAt(0).toUpperCase() + userProfile.gender.slice(1) : '--'}</p>
+                </div>
+                 <div>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Date & Time</p>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '1.1rem', color: '#1F2937', fontWeight: 800 }}>{new Date().toLocaleDateString('en-GB')}, {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                </div>
+              </div>
+
+              {/* AI Predictions */}
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1F2937', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.5rem' }}>🎯</span> Top Identified Diseases
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
                 {results.slice(0, 3).map((r, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: '16px', background: '#fafafa', border: '1px solid var(--border-light)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--danger-light)', color: 'var(--danger-red)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.1rem' }}>
-                          {i + 1}
-                        </div>
-                        <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-dark)', fontWeight: 700 }}>{r}</h4>
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderRadius: '12px', background: i === 0 ? '#FEF2F2' : '#F9FAFB', border: i === 0 ? '1px solid #FECACA' : '1px solid #E5E7EB', borderLeft: i === 0 ? '6px solid #EF4444' : '6px solid #9CA3AF' }}>
+                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: i === 0 ? '#EF4444' : '#D1D5DB', color: '#FFFFFF', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1rem', marginRight: '16px' }}>
+                        {i + 1}
                       </div>
-                      <div style={{ fontSize: '1.5rem' }}>🦠</div>
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ margin: 0, fontSize: '1.15rem', color: i === 0 ? '#991B1B' : '#1F2937', fontWeight: 800 }}>{r}</h4>
+                        {i === 0 && <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#DC2626', fontWeight: 700 }}>Highest Probability Match</p>}
+                      </div>
                     </div>
                 ))}
               </div>
 
-              {/* Dynamic Recommendations Box */}
-              <div style={{ marginTop: '24px', background: '#fafafa', borderRadius: '16px', padding: '20px', border: '1px solid var(--border-light)' }}>
-                <h4 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: 'var(--text-dark)' }}>Recommended Next Steps</h4>
+              {/* Precautions Section */}
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1F2937', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.5rem' }}>💡</span> Recommended Next Steps
+              </h3>
+              <div style={{ background: '#F0FDF4', borderRadius: '16px', padding: '24px', border: '1px solid #A7F3D0' }}>
                 {Array.isArray(precautions) ? (
-                  <ul style={{ paddingLeft: '20px', color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1.8, margin: 0 }}>
-                    {precautions.map((p, idx) => <li key={idx}>{p}</li>)}
+                  <ul style={{ paddingLeft: '20px', color: '#065F46', fontWeight: 600, lineHeight: 1.8, margin: 0, fontSize: '0.95rem' }}>
+                    {precautions.map((p, idx) => <li key={idx} style={{ marginBottom: '8px' }}>{p}</li>)}
                   </ul>
                 ) : (
-                  <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 600, fontSize: '0.9rem' }}>
-                    {precautions || "Rest, avoid smoke, hydration. Please consult a healthcare professional."}
+                  <p style={{ margin: 0, color: '#065F46', lineHeight: 1.6, fontWeight: 600, fontSize: '0.95rem' }}>
+                    {precautions || "Suggested precautions: rest, stay hydrated, and follow medical guidance. Please consult a healthcare professional."}
                   </p>
                 )}
               </div>
-              
 
-              {/* Buttons */}
-              <div data-html2canvas-ignore="true" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '30px', flexWrap: 'wrap' }}>
-                <button className="btn-outline-teal" onClick={exportReport} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', width: 'auto', padding: '14px 30px', minWidth: '220px' }}>
-                  <Icons.Download size={20} /> Export Report
-                </button>
-                
-                <button className="btn-teal-primary" onClick={() => { setSelectedSymptoms({}); setScreen("home"); }} style={{ width: 'auto', padding: '14px 30px', minWidth: '220px' }}>
-                  Return to Dashboard
-                </button>
+              {/* Disclaimer Footer */}
+              <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '2px dashed #E5E7EB', textAlign: 'center' }}>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: '#EF4444', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                   <Icons.Shield size={18} /> Confidential Medical Assessment
+                </p>
+                <p style={{ margin: '10px auto 0 auto', fontSize: '0.8rem', color: '#6B7280', fontWeight: 500, maxWidth: '90%', lineHeight: 1.5 }}>
+                   *This AI-generated assessment is for informational purposes only. It is not a clinical diagnosis. Always consult a qualified healthcare professional for medical advice and treatment.
+                </p>
               </div>
-              
-              <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                Date: {new Date().toLocaleDateString('en-GB')}, {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-              </p>
             </div>
+
+            {/* Action Buttons (Non-printable) */}
+            <div data-html2canvas-ignore="true" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', margin: '30px auto', flexWrap: 'wrap', width: '95%', maxWidth: '800px' }}>
+              <button className="btn-outline-teal" onClick={exportReport} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', flex: 1, padding: '16px 30px', minWidth: '200px', backgroundColor: 'white' }}>
+                <Icons.Download size={20} /> Export Report
+              </button>
+              <button className="btn-teal-primary" onClick={() => { setSelectedSymptoms({}); setScreen("home"); }} style={{ flex: 1, padding: '16px 30px', minWidth: '200px' }}>
+                Return to Dashboard
+              </button>
+            </div>
+
           </div>
         )}
 
@@ -1843,6 +1914,30 @@ body { margin: 0; background-color: var(--bg-main); font-family: 'Plus Jakarta S
 .disease-info h4 { margin: 0 0 4px 0; font-size: 1.1rem; font-weight: 800; color: var(--text-dark); }
 .disease-info p { margin: 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
 .disease-icon { font-size: 1.5rem; }
+
+/* Premium Pill Button (For Change Password) */
+.btn-premium-teal {
+  background: var(--primary-teal);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 77, 64, 0.2);
+}
+
+.btn-premium-teal:hover {
+  background: var(--primary-light);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 77, 64, 0.25);
+}
+
+.btn-premium-teal:active {
+  transform: translateY(0);
+}
 
 .recommendations-section { margin-top: 30px; }
 .recommendations-section h4 { font-size: 1.1rem; margin-bottom: 16px; }
