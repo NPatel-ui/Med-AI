@@ -174,6 +174,10 @@ export default function App() {
       const profileRef = doc(db, 'artifacts', appId, 'users', uid, 'profile', 'main');
       const profileSnap = await getDoc(profileRef);
       if (profileSnap.exists()) setUserProfile(prev => ({ ...prev, ...profileSnap.data() }));
+      else {
+      // If it doesn't exist, we don't throw an error, just use the defaults from register
+      console.log("New user profile initializing...");
+    }
 
       const historyRef = doc(db, 'artifacts', appId, 'users', uid, 'data', 'history');
       const historySnap = await getDoc(historyRef);
@@ -1623,9 +1627,9 @@ if (labSnap.exists()) {
         {isLoggedIn && screen !== "login" && screen !== "loading" && screen !== "symptoms" && screen !== "results" && !viewingHistoryItem && (
           <nav className="bottom-nav">
             <div className={`nav-item ${screen === "home" ? "active" : ""}`} onClick={() => setScreen("home")}>
-              <Icons.Home />
-              <span>Home</span>
-            </div>
+  <Icons.Home size={24} color={screen === "home" ? "var(--primary-teal)" : "var(--text-muted)"} />
+  <span>Home</span>
+</div>
             <div className={`nav-item ${screen === "symptoms" ? "active" : ""}`} onClick={() => { setSelectedSymptoms({}); setResults([]); setSearchQuery(""); navigateTo("symptoms"); }}>
               <Icons.Clipboard />
               <span>Assessment</span>
@@ -2385,5 +2389,96 @@ body { margin: 0; background-color: var(--bg-main); font-family: 'Plus Jakarta S
     min-height: 100vh !important; 
     overflow-y: visible !important;
   }
+
+  /* ==========================================================================
+   MOBILE-CENTRIC OPTIMIZATIONS
+   ========================================================================== */
+
+/* 1. Global Reset for Mobile Elasticity */
+* {
+  -webkit-tap-highlight-color: transparent; /* Removes blue box on tap */
+  touch-action: manipulation; /* Faster taps */
+}
+
+/* 2. Responsive Typography */
+@media (max-width: 480px) {
+  html { font-size: 14px; } /* Slightly smaller base for small screens */
+  
+  .greeting-section h1 { font-size: 1.5rem !important; }
+  .header-title { font-size: 1.1rem !important; }
+}
+
+/* 3. Improved Sidebar for Mobile */
+.sidebar-menu {
+  width: 85% !important; /* Larger width for easier navigation */
+  max-width: 320px;
+}
+
+/* 4. Dashboard Grid Fix for Mobile */
+@media (max-width: 480px) {
+  .action-cards-grid {
+    grid-template-columns: 1fr !important; /* Stack cards on mobile */
+    gap: 12px !important;
+  }
+  
+  .bmi-gauge-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 24px 16px !important;
+  }
+  
+  .bmi-gauge { margin: 20px auto 0 !important; }
+  
+  .mini-action {
+    padding: 20px !important; /* Larger touch target */
+  }
+
+  .content-container {
+    padding: 20px 16px 100px !important; /* Tighter horizontal padding */
+  }
+}
+
+/* 5. Sticky Bottom Action Bar Fix */
+.sticky-action-bar {
+  width: 92% !important;
+  bottom: 15px !important;
+  padding: 10px 16px !important;
+  border-radius: 20px !important;
+}
+
+/* 6. Form Optimization */
+@media (max-width: 480px) {
+  .form-group-3 {
+    grid-template-columns: 1fr 1fr !important; /* Age/Height top, Weight full width */
+  }
+  .form-group-3 > div:last-child {
+    grid-column: span 2;
+  }
+  
+  .light-input, select.light-input {
+    font-size: 16px !important; /* Prevents iOS auto-zoom on focus */
+    padding: 16px !important; /* Larger tap area */
+  }
+}
+
+/* 7. Bottom Nav Styling (Mobile App Feel) */
+.bottom-nav {
+  padding: 10px 0 calc(env(safe-area-inset-bottom) + 10px) !important; /* iPhone Notch support */
+  border-top: 1px solid var(--border-light);
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.05) !important;
+}
+
+/* 8. Full-Width Buttons on Mobile */
+@media (max-width: 480px) {
+  .btn-teal-primary, .btn-outline-teal {
+    height: 56px; /* Standard mobile primary action height */
+  }
+}
+
+/* 9. Dark Mode Refinement for Mobile */
+.dark .white-card {
+  background: #1E293B !important;
+  border: 1px solid rgba(255,255,255,0.05) !important;
+}
 }
 `; 
