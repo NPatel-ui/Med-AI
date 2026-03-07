@@ -174,24 +174,6 @@ PRECAUTION_TAGS = {
     "Chicken Pox": ["isolation", "calamine_lotion", "avoid_scratching"]
 }
 
-# ================= SIBLING DISEASE GROUPS =================
-SIBLING_GROUPS = [
-    {"Common Cold", "Sinusitis"},
-    {"Viral Fever", "Influenza"},
-    {"Dengue", "Chikungunya"},
-    {"Bronchitis", "Pneumonia"},
-    {"Gastroenteritis", "Food Poisoning"}
-]
-
-def get_sibling(disease):
-    """Return sibling disease if it exists"""
-    for group in SIBLING_GROUPS:
-        if disease in group:
-            for d in group:
-                if d != disease:
-                    return d
-    return None
-
 # ================= HELPERS =================
 def build_input_vector(selected_symptoms: List[str]):
     if not SYMPTOMS or not scaler:
@@ -285,7 +267,8 @@ def reset_password(req: ResetPasswordRequest):
         print("Reset Error:", e)
         raise HTTPException(status_code=500, detail="Failed to reset password")
 
-# ================= PREDICT ENDPOINT =================@app.post("/predict")
+# ================= PREDICT ENDPOINT =================
+@app.post("/predict")
 def predict(req: PredictRequest):
     try:
         if not model or not SYMPTOMS:
@@ -297,31 +280,17 @@ def predict(req: PredictRequest):
             return {"predictions": [], "precaution": "No valid symptoms provided."}
 
         X = build_input_vector(valid_symptoms)
-
         probs = model.predict_proba(X)[0]
+        top_indices = sorted(range(len(probs)), key=lambda i: probs[i], reverse=True)[:3]
+        top_diseases = [CLASSES[i] for i in top_indices]
 
-        # Rank diseases
-        ranked_indices = sorted(range(len(probs)), key=lambda i: probs[i], reverse=True)
-        ranked_diseases = [CLASSES[i] for i in ranked_indices]
-
-        top_diseases = ranked_diseases[:3]
-
-        # ================= APPLY SIBLING LOGIC =================
-        primary = top_diseases[0]
-        sibling = get_sibling(primary)
-
-        if sibling and sibling not in top_diseases:
-            if sibling in ranked_diseases:
-                top_diseases[2] = sibling
-
-        # ================= PRECAUTIONS =================
         collected_tags = set()
         for d in top_diseases:
             collected_tags.update(PRECAUTION_TAGS.get(d, []))
 
         precaution_text = generate_precaution_text(list(collected_tags))
 
-        # ================= DB LOGGING =================
+        # DB Logging
         if db and req.user_email:
             try:
                 db.collection("predictions").add({
