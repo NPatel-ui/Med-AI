@@ -42,25 +42,26 @@ except Exception as e:
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 gemini_model = None
 
-if GEMINI_API_KEY:
-    try:
-        genai.configure(api_key=GEMINI_API_KEY)
-        
-        # 🚀 AUTO-DISCOVERY: Ask the Google server exactly which models are valid
-        valid_model_name = "gemini-pro" # Ultimate fallback
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                valid_model_name = m.name # Grab the exact formatted name the server requires
-                if 'flash' in m.name.lower(): 
-                    break # Stop looking if we find the fast 'flash' model
-                    
-        gemini_model = genai.GenerativeModel(valid_model_name)
-        print(f"✅ Gemini AI initialized using exact model: {valid_model_name}")
-        
-    except Exception as e:
-        print(f"⚠️ Gemini Config Error: {e}")
-else:
-    print("⚠️ GEMINI_API_KEY not found. Using fallback precautions.")
+def get_gemini_model():
+    """Helper to ensure model is configured even if env vars synced late"""
+    global gemini_model
+    if gemini_model:
+        return gemini_model
+    
+    key = os.getenv("GEMINI_API_KEY")
+    if key:
+        try:
+            genai.configure(api_key=key)
+            # Hardcoding 1.5-pro is more stable for complex JSON tasks like PDF parsing
+            gemini_model = genai.GenerativeModel('gemini-1.5-pro')
+            print("✅ Gemini AI configured successfully with gemini-1.5-pro")
+            return gemini_model
+        except Exception as e:
+            print(f"⚠️ Gemini Config Error: {e}")
+    return None
+
+# Initial attempt at startup
+get_gemini_model()
 
 # ================= SMTP EMAIL SETUP =================
 SMTP_EMAIL = os.getenv("SMTP_EMAIL")
@@ -336,6 +337,17 @@ def health():
 # ================= PDF PARSING =================
 @app.post("/parse-report")
 async def parse_medical_report(file: UploadFile = File(...)):
+    model_instance = get_gemini_model()
+    if not model_instance:
+            print("❌ Gemini model is not initialized.")
+            raise HTTPException(status_code=500, detail="Gemini AI is not configured. Please check your API key in Render.")
+
+    print("🤖 Sending text to Gemini AI...")
+        # ADDED: response_mime_type forces Gemini to return valid JSON
+    response = model_instance.generate_content(
+            prompt,
+            generation_config={"response_mime_type": "application/json"}
+        )
     if not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
     
@@ -387,14 +399,18 @@ async def parse_medical_report(file: UploadFile = File(...)):
         
         print("🤖 Sending text to Gemini AI...")
         response = gemini_model.generate_content(prompt)
-        
         print(f"✅ Received response from Gemini. Cleaning data...")
-        # Clean the response just in case Gemini adds markdown code blocks
-        cleaned_response = response.text.replace("```json", "").replace("```", "").strip()
+        raw_output = response.text.strip()
+        
+        if not raw_output:
+            raise HTTPException(status_code=500, detail="AI returned an empty response.")
+
+        # Clean markdown if JSON mode didn't strip it
+        cleaned_response = raw_output.replace("```json", "").replace("```", "").strip()
         
         report_data = json.loads(cleaned_response)
         print("🎉 JSON parsed successfully! Sending to React.")
-        return report_data
+        return report_data 
 
     except json.JSONDecodeError as e:
         print(f"🔴 JSON ERROR: Gemini returned invalid format. Raw text: {response.text}")
@@ -403,3 +419,4 @@ async def parse_medical_report(file: UploadFile = File(...)):
     except Exception as e:
         print(f"🔴 EXACT ERROR PARSING REPORT: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to analyze the report: {str(e)}")
+
