@@ -49,7 +49,7 @@ const Icons = {
   MedLogo: ({ size = 28, className="teal-icon" }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/><path d="M10 3h4v4h4v4h-4v4h-4v-4H6V7h4z"/></svg>,
   User: ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   History: ({ size = 24, className }) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>,
-  EyeOff: ({ size = 20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>,
+  
   Home: ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>,
   Clipboard: ({ size = 24, className }) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14h6"/><path d="M9 18h6"/><path d="M9 10h.01"/></svg>,
   Menu: ({ size = 24, className }) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
@@ -59,7 +59,11 @@ const Icons = {
   ArrowRight: ({ size = 20, color="currentColor" }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
   ArrowLeft: ({ size = 24, className }) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
   Shield: ({ size = 40 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-  LogOut: ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+  LogOut: ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  EyeOff: ({ size = 20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>,
+  
+  // --- NEW: Add this Eye icon right below EyeOff ---
+  Eye: ({ size = 20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>,
 };
 
 export default function App() {
@@ -77,6 +81,7 @@ export default function App() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({ current: "", new: "", confirm: "" });
+  const [showProfilePasswords, setShowProfilePasswords] = useState({ current: false, new: false, confirm: false });
   const [isListening, setIsListening] = useState(false);
   const [spokenText, setSpokenText] = useState("");
   const [reportFile, setReportFile] = useState(null);
@@ -113,6 +118,11 @@ export default function App() {
       }
     });
 
+    fetch(`${API_BASE}/health`)
+  .then(res => res.json())
+  .then(data => console.log("Backend status:", data))
+  .catch(() => console.warn("Backend not reachable"));
+
     fetch(`${API_BASE}/symptoms`)
       .then(res => res.json())
       .then(data => {
@@ -148,6 +158,11 @@ export default function App() {
       const historyRef = doc(db, 'artifacts', appId, 'users', uid, 'data', 'history');
       const historySnap = await getDoc(historyRef);
       if (historySnap.exists()) setHistory(historySnap.data().records || []);
+      const labRef = doc(db, 'artifacts', appId, 'users', uid, 'data', 'labHistory');
+const labSnap = await getDoc(labRef);
+if (labSnap.exists()) {
+  setLabHistory(labSnap.data().records || []);
+}
     } catch (err) {
       setError("Connection interrupted.");
     }
@@ -182,14 +197,54 @@ export default function App() {
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
-    setUserProfile(prev => ({ ...prev, [name]: value }));
+    let val = value;
+
+    // 1. FULL NAME: Actively remove any numbers (0-9)
+    if (name === "name") {
+      val = val.replace(/\d/g, ''); 
+    }
+
+    // 2. PHONE: Actively remove non-numbers and limit to exactly 10 digits
+    if (name === "phone") {
+      val = val.replace(/\D/g, '').slice(0, 10);
+    }
+
+    // 3. EMAIL: Automatically chop off anything typed after ".com"
+    if (name === "email") {
+      const comIndex = val.toLowerCase().indexOf('.com');
+      if (comIndex !== -1) {
+        val = val.slice(0, comIndex + 4); // Keeps only up to '.com'
+      }
+    }
+
+    // 4. MEDICAL LIMITS: Only check the MAXIMUM limits so you can actually type!
+    if (name === "age" && val !== "") {
+      if (Number(val) > 120) return; // Stops at 120
+    }
+    if (name === "height" && val !== "") {
+      if (Number(val) > 250) return; // Stops at 250
+    }
+    if (name === "weight" && val !== "") {
+      if (Number(val) > 250) return; // Stops at 250
+    }
+
+    setUserProfile(prev => ({ ...prev, [name]: val }));
   };
 
   const handleLoginChange = (e) => {
     const { name, value } = e.target;
-    setLoginData(prev => ({ ...prev, [name]: value }));
-  };
+    let val = value;
 
+    // Apply the exact same email restriction for the login screen
+    if (name === "email") {
+      const comIndex = val.toLowerCase().indexOf('.com');
+      if (comIndex !== -1) {
+        val = val.slice(0, comIndex + 4);
+      }
+    }
+
+    setLoginData(prev => ({ ...prev, [name]: val }));
+  };
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -464,7 +519,10 @@ export default function App() {
       const res = await fetch(`${API_BASE}/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symptoms: selected, user_email: currentUser?.email }),
+        body: JSON.stringify({
+  symptoms: selected.length ? selected : [],
+  user_email: currentUser?.email || null
+}),
         signal: controller.signal
       });
       clearTimeout(timeoutId);
@@ -486,14 +544,10 @@ export default function App() {
       }
 
       // 2. Force precautions to be safe to render (prevents Object crashes)
-      let safePrecautions = "Consult a healthcare professional.";
-      if (Array.isArray(data.precaution)) {
-        safePrecautions = data.precaution.flat().map(String); // Flattens 2D arrays just in case
-      } else if (typeof data.precaution === 'string') {
-        safePrecautions = data.precaution;
-      } else if (data.precaution && typeof data.precaution === 'object') {
-        safePrecautions = "Please consult a doctor for recommended steps."; // Fallback for raw objects
-      }
+      const safePrecautions =
+  typeof data.precaution === "string"
+    ? data.precaution
+    : "Consult a healthcare professional.";
       // ------------------------------------
 
       const newEntry = {
@@ -661,19 +715,28 @@ export default function App() {
 
                   <div className="form-group-2 mt-3">
                     <div>
-                      <label className="input-label">City</label>
-                      <input required name="city" value={userProfile.city} onChange={handleProfileChange} placeholder="Mumbai" className="light-input" />
+                      <label className="input-label">State</label>
+                      <input required name="state" value={userProfile.state} onChange={handleProfileChange} placeholder="Maharastra" className="light-input" />
                     </div>
                     <div>
-                      <label className="input-label">State</label>
-                      <input required name="state" value={userProfile.state} onChange={handleProfileChange} placeholder="Maharashtra" className="light-input" />
+                      <label className="input-label">City</label>
+                      <input required name="city" value={userProfile.city} onChange={handleProfileChange} placeholder="Mumbai" className="light-input" />
                     </div>
                   </div>
 
                   <label className="input-label mt-3">Mobile No.</label>
                   <div className="phone-input-wrapper mb-3">
                     <span className="phone-prefix">+91</span>
-                    <input required type="tel" name="phone" value={userProfile.phone} onChange={handleProfileChange} placeholder="98765 43210" className="light-input phone-input" />
+                    <input 
+                      required 
+                      type="tel" 
+                      name="phone" 
+                      maxLength="10" 
+                      value={userProfile.phone} 
+                      onChange={handleProfileChange} 
+                      placeholder="9876543210" 
+                      className="light-input phone-input" 
+                    />
                   </div>
                 </>
               )}
@@ -714,23 +777,30 @@ export default function App() {
           </div>
         )}
 
-        {/* --- HOME DASHBOARD --- */}
+        {/* --- HOME DASHBOARD --- */}{/* --- HOME DASHBOARD --- */}
         {screen === "home" && (
           <div className="dashboard-screen anim-fade-in content-container">
-            <div className="dash-header">
-              <div className="mobile-only" style={{position: 'relative', zIndex: 10, cursor: 'pointer', padding: '5px'}} onClick={() => setIsSidebarOpen(true)}>
-                <Icons.Menu size={28} className="text-dark" />
+            
+            {/* --- FIXED: DASHBOARD HEADER --- */}
+            <div className="dash-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              
+              {/* Left Side: Menu + Title */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div className="mobile-only" style={{position: 'relative', zIndex: 10, cursor: 'pointer', padding: '5px'}} onClick={() => setIsSidebarOpen(true)}>
+                  <Icons.Menu size={28} className="text-dark" />
+                </div>
+                <h2 className="header-title" style={{ margin: 0 }}>Dashboard</h2>
               </div>
               
-              <h2 className="header-title">Dashboard</h2>
-              
+              {/* Right Side: Profile Avatar */}
               <div className="profile-mini-avatar" onClick={() => setScreen("profile")} style={{cursor: 'pointer', position: 'relative', zIndex: 10}}>
                 {userProfile.photo ? <img src={userProfile.photo} alt="User" /> : <Icons.User size={20}/>}
               </div>
+              
             </div>
 
             <div className="greeting-section">
-              <h1>Hello, {userProfile.name ? userProfile.name.split(' ')[0].toUpperCase() : 'USER'}! 👋</h1>
+              <h1>Hello, {userProfile.name ? userProfile.name.split(' ')[0].toUpperCase() : 'USER'}! </h1>
             </div>
 
             <div className="desktop-row">
@@ -794,45 +864,44 @@ export default function App() {
             <div className="recent-activity-section">
               <div className="section-title-row">
                 <h3>Recent Activity</h3>
-                <span className="dots">•••</span>
               </div>
               
-              {recentActivity ? (
-                <div className="white-card recent-timeline-card">
-                  {/* Changes dot color based on activity type */}
-                  <div className="timeline-dot" style={{
-                    borderColor: recentActivity.type === 'lab_report' ? '#ffedd5' : '#e0f2f1', 
-                    background: recentActivity.type === 'lab_report' ? 'var(--accent-orange)' : 'var(--primary-teal)'
-                  }}></div>
-                  
-                  <div className="timeline-content">
-                    <p className="time-text">{recentActivity.date}, {recentActivity.time}</p>
-                    
-                    {/* SMART RENDER: Lab Report vs Symptom Assessment */}
-                    {recentActivity.type === 'lab_report' ? (
-                       <>
-                         <h4 style={{margin: '0 0 4px 0', fontSize: '0.95rem', color: 'var(--text-dark)'}}>Lab Report Analysis</h4>
-                         <p className="symptoms-preview" style={{fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>
-                           {recentActivity.reportData?.summary || "Report scanned successfully"}
-                         </p>
-                       </>
-                    ) : (
-                       <>
-                         <h4 style={{margin: '0 0 4px 0', fontSize: '0.95rem', color: 'var(--text-dark)'}}>{recentActivity.topMatch || "Symptom Assessment"}</h4>
-                         <p className="symptoms-preview" style={{fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500}}>
-                           {recentActivity.symptoms && recentActivity.symptoms.length > 0 
-                             ? recentActivity.symptoms.slice(0, 2).map(s => s.replace(/_/g, " ")).join(", ") + (recentActivity.symptoms.length > 2 ? "..." : "")
-                             : "No specific symptoms"}
-                         </p>
-                       </>
-                    )}
-                  </div>
-                  
-                  <button className="btn-view-light" onClick={(e) => { e.stopPropagation(); setViewingHistoryItem(recentActivity); }}>View</button>
-                </div>
-              ) : (
-                <p className="text-muted text-center mt-3">No activity yet.</p>
-              )}
+              {/* --- IMPROVED: SHOWING LAST 4 ACTIVITIES --- */}
+<div className="activity-stack">
+  {allActivity.length > 0 ? (
+    allActivity.slice(0, 4).map((activity, idx) => (
+      <div 
+        key={idx} 
+        className="white-card recent-timeline-card mb-3 anim-slide-in" 
+        style={{ animationDelay: `${idx * 0.12}s`, cursor: 'pointer' }}
+        onClick={() => setViewingHistoryItem(activity)}
+      >
+        <div className="timeline-dot" style={{
+          borderColor: activity.type === 'lab_report' ? '#ffedd5' : '#e0f2f1', 
+          background: activity.type === 'lab_report' ? 'var(--accent-orange)' : 'var(--primary-teal)'
+        }}></div>
+        
+        <div className="timeline-content">
+          <p className="time-text">{activity.date}, {activity.time}</p>
+          <h4 className="activity-title" style={{ margin: '0 0 2px 0', fontSize: '1rem', fontWeight: 700 }}>
+            {activity.type === 'lab_report' ? "Lab Report Analysis" : (activity.topMatch || "Assessment")}
+          </h4>
+          <p className="symptoms-preview" style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            {activity.type === 'lab_report' 
+              ? (activity.reportData?.summary || "Analysis complete") 
+              : (activity.symptoms?.slice(0, 2).map(s => s.replace(/_/g, " ")).join(", ") + (activity.symptoms?.length > 2 ? "..." : ""))}
+          </p>
+        </div>
+        
+        <button className="btn-view-pill">View</button>
+      </div>
+    ))
+  ) : (
+    <div className="white-card text-center" style={{ padding: '40px', border: '2px dashed var(--border-light)', borderRadius: '24px' }}>
+      <p className="text-muted m-0">No recent activity yet.</p>
+    </div>
+  )}
+</div>
             </div>
           </div>
         )}
@@ -841,13 +910,13 @@ export default function App() {
         {screen === "symptoms" && (
           <div className="symptoms-screen anim-fade-in content-container">
             <div className="dash-header no-border">
-              <div style={{position: 'relative', zIndex: 10, cursor: 'pointer', padding: '5px'}} onClick={() => setScreen("home")}>
-                 <Icons.ArrowLeft size={28} className="text-dark" />
+              <div className="header-left-group">
+                <div className="action-icon-btn" onClick={() => setScreen("home")}>
+                   <Icons.ArrowLeft size={28} className="text-dark" />
+                </div>
+                <h2 className="header-title">Symptoms Checklist</h2>
               </div>
-              <h2 className="header-title">Symptoms Checklist</h2>
-              <div style={{width: 28}}></div>
             </div>
-
             <div className="search-box mb-3" style={{ display: 'flex', alignItems: 'center' }}>
               <Icons.Search size={20} className="text-muted" />
               <input 
@@ -971,264 +1040,246 @@ export default function App() {
           </div>
         )}
 
-     {/* --- PROFILE PAGE --- */}
+      {/* --- PROFESSIONAL SAAS PROFILE PAGE --- */}
         {screen === "profile" && (
-          <div className="screen-container anim-fade-in pb-120">
+          <div className="profile-screen anim-fade-in content-container pb-120">
             <div className="dash-header mb-4">
-              <div className="clickable-icon" onClick={() => navigateTo("home")}>
-                 <Icons.ArrowLeft size={28} className="text-dark" />
+              <div className="back-btn-glass" onClick={() => navigateTo("home")}>
+                 <Icons.ArrowLeft size={24} className="text-dark" />
               </div>
-              <h2 className="header-title">My Profile</h2>
-              <div style={{width: 28}}></div>
+              <h2 className="header-title">Account Settings</h2>
+              <div style={{width: 44}}></div> {/* Spacer for centering */}
             </div>
-            
-            {/* User Photo & Name Card */}
-            <div className="white-card text-center mb-4" style={{ position: 'relative', zIndex: 20 }}>
-              <label className="photo-label" style={{ cursor: isEditingProfile ? 'pointer' : 'default', display: 'inline-block', position: 'relative', margin: '0 auto' }}>
-                <div className="photo-preview-circle mx-auto mb-3" style={{width: '100px', height: '100px'}}>
-                   {userProfile.photo ? <img src={userProfile.photo} alt="User" className="photo-preview"/> : <Icons.User size={40} />}
-                </div>
-                {isEditingProfile && (
-                   <div className="upload-badge" style={{ bottom: '-10px', left: '50%', transform: 'translateX(-50%)', width: 'max-content', pointerEvents: 'none' }}>Change Photo</div>
-                )}
-                <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden-input" disabled={!isEditingProfile} />
-              </label>
+
+            <div className="profile-dashboard-layout">
               
-              {isEditingProfile ? (
-                 <input name="name" value={userProfile.name} onChange={handleProfileChange} className="light-input text-center mt-3 mb-2" style={{ fontWeight: 'bold' }} placeholder="Full Name" />
-              ) : (
-                 <h3 className="profile-name mt-3" style={{ fontSize: '1.25rem', color: 'var(--text-dark)' }}>{userProfile.name || 'User'}</h3>
-              )}
-              <p className="text-muted m-0">{userProfile.email}</p>
-            </div>
+              {/* LEFT COLUMN: User Identity & Actions */}
+              <div className="profile-identity-col">
+                <div className="white-card text-center profile-identity-card">
+                  <label className="photo-label profile-avatar-wrapper">
+                    <div className="photo-preview-circle mx-auto">
+                       {userProfile.photo ? <img src={userProfile.photo} alt="User" className="photo-preview"/> : <Icons.User size={50} />}
+                    </div>
+                    {isEditingProfile && (
+                       <div className="upload-badge-hover">Change Photo</div>
+                    )}
+                    <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden-input" disabled={!isEditingProfile} />
+                  </label>
+                  
+                  {isEditingProfile ? (
+                     <input name="name" value={userProfile.name} onChange={handleProfileChange} className="light-input text-center mt-3 mb-1 font-weight-bold" placeholder="Full Name" />
+                  ) : (
+                     <h3 className="profile-user-name">{userProfile.name || 'User'}</h3>
+                  )}
+                  <p className="profile-user-email">{userProfile.email}</p>
 
-            {/* Personal Details Card */}
-            <div className="white-card mb-4" style={{ position: 'relative', zIndex: 20 }}>
-              <h4 className="m-0 mb-3" style={{ color: 'var(--text-dark)' }}>Personal Details</h4>
-              <div className="form-group-2">
-                <div>
-                  <label className="input-label">Age</label>
-                  {isEditingProfile ? (
-                    <input type="number" name="age" value={userProfile.age} onChange={handleProfileChange} className="light-input" />
-                  ) : (
-                    <div className="light-input bg-disabled">{userProfile.age || '--'} yrs</div>
-                  )}
-                </div>
-                <div>
-                  <label className="input-label">Gender</label>
-                  {isEditingProfile ? (
-                    <input type="text" name="gender" value={userProfile.gender || ''} onChange={handleProfileChange} className="light-input" placeholder="Male/Female" />
-                  ) : (
-                    <div className="light-input bg-disabled" style={{textTransform: 'capitalize'}}>{userProfile.gender || '--'}</div>
-                  )}
-                </div>
-                <div>
-                  <label className="input-label">Height (cm)</label>
-                  {isEditingProfile ? (
-                    <input type="number" name="height" value={userProfile.height} onChange={handleProfileChange} className="light-input" />
-                  ) : (
-                    <div className="light-input bg-disabled">{userProfile.height || '--'} cm</div>
-                  )}
-                </div>
-                <div>
-                  <label className="input-label">Weight (kg)</label>
-                  {isEditingProfile ? (
-                    <input type="number" name="weight" value={userProfile.weight} onChange={handleProfileChange} className="light-input" />
-                  ) : (
-                    <div className="light-input bg-disabled">{userProfile.weight || '--'} kg</div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="form-group-2 mt-3">
-                <div>
-                  <label className="input-label">City</label>
-                  {isEditingProfile ? (
-                    <input type="text" name="city" value={userProfile.city} onChange={handleProfileChange} className="light-input" />
-                  ) : (
-                    <div className="light-input bg-disabled">{userProfile.city || '--'}</div>
-                  )}
-                </div>
-                <div>
-                  <label className="input-label">State</label>
-                  {isEditingProfile ? (
-                    <input type="text" name="state" value={userProfile.state} onChange={handleProfileChange} className="light-input" />
-                  ) : (
-                    <div className="light-input bg-disabled">{userProfile.state || '--'}</div>
-                  )}
-                </div>
-              </div>
-            </div>
+                  <div className="profile-action-divider"></div>
 
-            {/* Security Card */}
-            <div className="white-card mb-4" style={{ position: 'relative', zIndex: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isChangingPassword ? '16px' : '0' }}>
-                <h4 className="m-0" style={{ color: 'var(--text-dark)' }}>Security</h4>
-                {!isChangingPassword && (
-                  <button className="text-link-teal" onClick={() => setIsChangingPassword(true)} style={{ fontSize: '0.85rem' }}>
-                    Change Password
-                  </button>
-                )}
-              </div>
-
-              {isChangingPassword && (
-                <div className="anim-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <label className="input-label" style={{ margin: 0 }}>Current Password</label>
-                      <button className="text-link-teal" onClick={handleProfileForgotPassword} style={{ fontSize: '0.8rem', fontWeight: 600, padding: 0 }}>
-                        Forgot Password ?
+                  {/* Integrated Action Buttons */}
+                  <div className="profile-action-stack">
+                    {isEditingProfile ? (
+                      <button className="btn-teal-primary" style={{padding: '14px', width: '100%'}} onClick={handleUpdateProfile}>
+                        Save Changes
                       </button>
-                    </div>
-                    <input type="password" value={passwordData.current} onChange={(e) => setPasswordData({...passwordData, current: e.target.value})} className="light-input" placeholder="••••••••" />
-                  </div>
-                  <div className="form-group-2">
-                    <div>
-                      <label className="input-label">New Password</label>
-                      <input type="password" value={passwordData.new} onChange={(e) => setPasswordData({...passwordData, new: e.target.value})} className="light-input" placeholder="••••••••" />
-                    </div>
-                    <div>
-                      <label className="input-label">Confirm New</label>
-                      <input type="password" value={passwordData.confirm} onChange={(e) => setPasswordData({...passwordData, confirm: e.target.value})} className="light-input" placeholder="••••••••" />
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '16px', flexWrap: 'wrap' }}>
-                    <button className="btn-teal-primary" onClick={handleChangePassword} style={{ width: 'auto', padding: '12px 30px', minWidth: '180px', fontSize: '0.95rem' }}>
-                      Update Password
-                    </button>
-                    <button className="btn-outline-teal" onClick={() => { setIsChangingPassword(false); setPasswordData({current: "", new: "", confirm: ""}); }} style={{ width: 'auto', padding: '12px 30px', minWidth: '180px', fontSize: '0.95rem' }}>
-                      Cancel
+                    ) : (
+                      <button className="btn-outline-teal" style={{padding: '14px', width: '100%'}} onClick={() => setIsEditingProfile(true)}>
+                        Edit Profile
+                      </button>
+                    )}
+                    
+                    <button className="btn-view-pill logout-btn" onClick={handleLogout}>
+                      <Icons.LogOut size={18} /> Sign Out
                     </button>
                   </div>
                 </div>
-              )}
-            </div>
-            
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '20px', flexWrap: 'wrap', position: 'relative', zIndex: 20 }}>
-              {isEditingProfile ? (
-                <button className="btn-teal-primary" onClick={handleUpdateProfile} style={{ width: 'auto', padding: '14px 40px', minWidth: '200px' }}>
-                  Save Changes
-                </button>
-              ) : (
-                <button className="btn-teal-primary" onClick={() => setIsEditingProfile(true)} style={{ width: 'auto', padding: '14px 40px', minWidth: '200px' }}>
-                  Edit Profile
-                </button>
-              )}
-
-              <button className="btn-outline-teal" onClick={handleLogout} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', width: 'auto', padding: '12px 30px', minWidth: '200px' }}>
-                <Icons.LogOut size={20} /> Log Out
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* --- REPORT DETAILS OVERLAY --- */}
-        {viewingHistoryItem && (
-          <div className="report-details-screen anim-fade-in content-container" style={{
-            position: 'absolute', top: 0, left: 0, width: '100%', minHeight: '100vh', 
-            background: 'var(--bg-main)', zIndex: 2000, padding: '24px 20px 100px', boxSizing: 'border-box'
-          }}>
-            <div className="printable-report-capture" style={{background: 'var(--bg-main)', padding: '0', borderRadius: '16px', maxWidth: '480px', margin: '0 auto'}}>
-              
-              <div className="dash-header no-border mb-4">
-                <div data-html2canvas-ignore="true" style={{position: 'relative', zIndex: 10, cursor: 'pointer', padding: '5px'}} onClick={() => setViewingHistoryItem(null)}>
-                   <Icons.ArrowLeft size={28} className="text-dark" />
-                </div>
-                <h2 className="header-title">Report Details</h2>
-                <div style={{width: 28}}></div>
               </div>
 
-              <p className="text-center text-muted mb-4" style={{fontWeight: 600, fontSize: '0.9rem'}}>
-                Analyzed on: {viewingHistoryItem.date}, {viewingHistoryItem.time}
-              </p>
-
-              {/* --- SMART RENDER: EXACT LAB REPORT UI VS SYMPTOMS UI --- */}
-              {viewingHistoryItem.type === 'lab_report' || viewingHistoryItem.reportData ? (
+              {/* RIGHT COLUMN: Data & Security Forms */}
+              <div className="profile-data-col">
                 
-                /* ================= EXACT LAB REPORT UI ================= */
-                <div>
-                  <div className="white-card mb-4" style={{ borderLeft: '4px solid var(--primary-teal)'}}>
-                    <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-dark)' }}>AI Summary</h4>
-                    <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.6 }}>{viewingHistoryItem.reportData?.summary}</p>
+                {/* Personal Details */}
+                <div className="white-card mb-4 profile-data-card">
+                  <div className="card-header-row mb-4">
+                    <h4 className="card-title-modern">Personal Information</h4>
+                    {isEditingProfile && <span className="editing-badge">Editing Mode</span>}
                   </div>
+                  
+                  <div className="modern-details-grid">
+                    <div className="detail-group">
+                      <label className="detail-label-modern">Age</label>
+                      {isEditingProfile ? (
+                        <input type="number" name="age" min="0" max="120" value={userProfile.age} onChange={handleProfileChange} className="light-input" />
+                      ) : (
+                        <div className="detail-value-modern">{userProfile.age ? `${userProfile.age} yrs` : '--'}</div>
+                      )}
+                    </div>
 
-                  <div className="section-title-row">
-                    <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Key Findings</h3>
+                    {/* --- SWAPPED STATE AND CITY --- */}
+                    <div className="detail-group">
+                      <label className="detail-label-modern">State</label>
+                      {isEditingProfile ? (
+                        <input type="text" name="state" value={userProfile.state} onChange={handleProfileChange} className="light-input" />
+                      ) : (
+                        <div className="detail-value-modern" style={{textTransform: 'capitalize'}}>{userProfile.state || '--'}</div>
+                      )}
+                    </div>
+
+                    <div className="detail-group">
+                      <label className="detail-label-modern">City</label>
+                      {isEditingProfile ? (
+                        <input type="text" name="city" value={userProfile.city} onChange={handleProfileChange} className="light-input" />
+                      ) : (
+                        <div className="detail-value-modern" style={{textTransform: 'capitalize'}}>{userProfile.city || '--'}</div>
+                      )}
+                    </div>
+
+                    <div className="detail-group">
+                      <label className="detail-label-modern">Gender</label>
+                      {isEditingProfile ? (
+                        <input type="text" name="gender" value={userProfile.gender || ''} onChange={handleProfileChange} className="light-input" placeholder="Male/Female" />
+                      ) : (
+                        <div className="detail-value-modern" style={{textTransform: 'capitalize'}}>{userProfile.gender || '--'}</div>
+                      )}
+                    </div>
+
+                    <div className="detail-group">
+                      <label className="detail-label-modern">Height</label>
+                      {isEditingProfile ? (
+                        <input type="number" name="height" min="30" max="250" value={userProfile.height} onChange={handleProfileChange} className="light-input" placeholder="cm" />
+                      ) : (
+                        <div className="detail-value-modern">{userProfile.height ? `${userProfile.height} cm` : '--'}</div>
+                      )}
+                    </div>
+
+                    <div className="detail-group">
+                      <label className="detail-label-modern">Weight</label>
+                      {isEditingProfile ? (
+                        <input type="number" name="weight" min="2" max="200" value={userProfile.weight} onChange={handleProfileChange} className="light-input" placeholder="kg" />
+                      ) : (
+                        <div className="detail-value-modern">{userProfile.weight ? `${userProfile.weight} kg` : '--'}</div>
+                      )}
+                    </div>
+
+                    <div className="detail-group">
+                      <label className="detail-label-modern">City</label>
+                      {isEditingProfile ? (
+                        <input type="text" name="city" value={userProfile.city} onChange={handleProfileChange} className="light-input" />
+                      ) : (
+                        <div className="detail-value-modern" style={{textTransform: 'capitalize'}}>{userProfile.city || '--'}</div>
+                      )}
+                    </div>
+
+                    <div className="detail-group">
+                      <label className="detail-label-modern">State</label>
+                      {isEditingProfile ? (
+                        <input type="text" name="state" value={userProfile.state} onChange={handleProfileChange} className="light-input" />
+                      ) : (
+                        <div className="detail-value-modern" style={{textTransform: 'capitalize'}}>{userProfile.state || '--'}</div>
+                      )}
+                    </div>
                   </div>
+                </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-                    {viewingHistoryItem.reportData?.abnormal_results && viewingHistoryItem.reportData.abnormal_results.length > 0 ? (
-                      viewingHistoryItem.reportData.abnormal_results.map((item, idx) => (
-                        <div key={idx} className="white-card" style={{ 
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', 
-                          borderLeft: item.status === 'high' ? '4px solid var(--danger-red)' : (item.status === 'low' ? '4px solid var(--accent-orange)' : '4px solid var(--success-green)') 
-                        }}>
-                          <div>
-                            <h4 style={{ margin: '0 0 4px 0', fontSize: '1.05rem', color: 'var(--text-dark)' }}>{item.test_name}</h4>
-                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>{item.simple_meaning}</p>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ 
-                              fontSize: '1.3rem', fontWeight: 800, 
-                              color: item.status === 'high' ? 'var(--danger-red)' : (item.status === 'low' ? 'var(--accent-orange)' : 'var(--success-green)') 
-                            }}>
-                              {item.value}
-                            </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Normal: {item.normal_range}</div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="white-card text-center text-muted">All tested levels appear to be within normal ranges.</div>
+                {/* Security Data */}
+                <div className="white-card mb-4 profile-data-card">
+                  <div className="card-header-row mb-4">
+                    <h4 className="card-title-modern">Security & Login</h4>
+                    {!isChangingPassword && (
+                      <button className="btn-view-pill" onClick={() => setIsChangingPassword(true)}>
+                        Change Password
+                      </button>
                     )}
                   </div>
 
-                  <div className="white-card mt-4" style={{ background: '#f0fdfa', border: '1px solid #ccfbf1' }}>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '1.2rem' }}>💡</span>
-                      <h4 style={{ margin: 0, color: 'var(--primary-teal)' }}>Next Steps</h4>
-                    </div>
-                    <p style={{ margin: 0, color: 'var(--text-dark)', lineHeight: 1.6, fontWeight: 500 }}>{viewingHistoryItem.reportData?.recommendation}</p>
-                  </div>
-                </div>
-
-              ) : (
-                
-                /* ================= EXACT SYMPTOMS UI ================= */
-                <div className="white-card mb-4" style={{boxShadow: '0 10px 30px rgba(0,0,0,0.05)'}}>
-                  <h4 style={{marginBottom: '12px', fontSize: '1rem', color: 'var(--text-dark)'}}>Symptoms Selected</h4>
-                  <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px'}}>
-                    {viewingHistoryItem.symptoms && viewingHistoryItem.symptoms.map((s, i) => (
-                       <span key={i} style={{fontSize: '0.85rem', background: '#fee2e2', color: '#dc2626', padding: '6px 12px', borderRadius: '8px', fontWeight: 600, textTransform: 'capitalize'}}>
-                          {s.replace(/_/g, " ")}
-                       </span>
-                    ))}
-                  </div>
-
-                  <h4 style={{marginBottom: '16px', fontSize: '1rem', color: 'var(--text-dark)'}}>Top Predictions</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
-                    {(viewingHistoryItem.allPredictions || [viewingHistoryItem.topMatch]).slice(0, 3).map((r, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: '16px', background: '#fafafa', border: '1px solid var(--border-light)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--danger-light)', color: 'var(--danger-red)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.1rem' }}>
-                              {i + 1}
-                            </div>
-                            <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-dark)', fontWeight: 700 }}>{r}</h4>
-                          </div>
-                          <div style={{ fontSize: '1.5rem' }}>🦠</div>
+                  {isChangingPassword ? (
+                    <div className="anim-fade-in password-change-section">
+                      
+                      <div className="mb-4">
+                        <div className="flex-between mb-2">
+                          <label className="detail-label-modern m-0">Current Password</label>
+                          <button className="text-link-teal text-small" onClick={handleProfileForgotPassword}>
+                            Forgot Password?
+                          </button>
                         </div>
-                    ))}
-                  </div>
+                        <div className="password-row">
+                          <input 
+                            type={showProfilePasswords.current ? "text" : "password"} 
+                            value={passwordData.current} 
+                            onChange={(e) => setPasswordData({...passwordData, current: e.target.value})} 
+                            className="light-input" 
+                            placeholder="••••••••" 
+                          />
+                          <span className="eye-icon" onClick={() => setShowProfilePasswords(prev => ({...prev, current: !prev.current}))}>
+                            {showProfilePasswords.current ? <Icons.Eye /> : <Icons.EyeOff />}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="modern-details-grid mb-4">
+                        <div className="detail-group">
+                          <label className="detail-label-modern">New Password</label>
+                          <div className="password-row">
+                            <input 
+                              type={showProfilePasswords.new ? "text" : "password"} 
+                              value={passwordData.new} 
+                              onChange={(e) => setPasswordData({...passwordData, new: e.target.value})} 
+                              className="light-input" 
+                              placeholder="••••••••" 
+                            />
+                            <span className="eye-icon" onClick={() => setShowProfilePasswords(prev => ({...prev, new: !prev.new}))}>
+                              {showProfilePasswords.new ? <Icons.Eye /> : <Icons.EyeOff />}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="detail-group">
+                          <label className="detail-label-modern">Confirm New</label>
+                          <div className="password-row">
+                            <input 
+                              type={showProfilePasswords.confirm ? "text" : "password"} 
+                              value={passwordData.confirm} 
+                              onChange={(e) => setPasswordData({...passwordData, confirm: e.target.value})} 
+                              className="light-input" 
+                              placeholder="••••••••" 
+                            />
+                            <span className="eye-icon" onClick={() => setShowProfilePasswords(prev => ({...prev, confirm: !prev.confirm}))}>
+                              {showProfilePasswords.confirm ? <Icons.Eye /> : <Icons.EyeOff />}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex-start gap-3 mt-2">
+                        <button className="btn-teal-primary" onClick={handleChangePassword} style={{width: 'auto', padding: '14px 32px'}}>
+                          Update Password
+                        </button>
+                        <button 
+                          className="btn-outline-teal" 
+                          onClick={() => { 
+                            setIsChangingPassword(false); 
+                            setPasswordData({current: "", new: "", confirm: ""}); 
+                            setShowProfilePasswords({current: false, new: false, confirm: false});
+                          }} 
+                          style={{width: 'auto', padding: '14px 32px'}}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="security-status-row">
+                      <div className="security-icon-wrapper">
+                        <Icons.Shield size={24} />
+                      </div>
+                      <div>
+                        <p className="security-status-title">Your account is secure</p>
+                        <p className="security-status-desc">Password login is active. No further action needed.</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
 
-              <div data-html2canvas-ignore="true" style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
-                <button className="btn-teal-primary desktop-w-auto" style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', minWidth: '200px'}} onClick={exportReport}>
-                  <Icons.Download size={20} /> Download Image
-                </button>
               </div>
-
             </div>
           </div>
         )}
@@ -1504,6 +1555,96 @@ body { margin: 0; background-color: var(--bg-main); font-family: 'Plus Jakarta S
 .forgot-password { text-align: right; font-size: 0.85rem; color: var(--primary-teal); font-weight: 600; cursor: pointer; margin-bottom: 24px; }
 .auth-footer { display: flex; justify-content: center; align-items: center; font-size: 0.95rem; }
 
+/* ==========================================================================
+   PREMIUM SAAS PROFILE UI
+   ========================================================================== */
+
+.profile-dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Forces the strict 2-column sidebar layout on Desktop */
+@media (min-width: 850px) {
+  .profile-dashboard-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    align-items: flex-start;
+  }
+}
+
+/* --- Left Sidebar (Identity) --- */
+.profile-identity-card { padding: 40px 24px; }
+.profile-avatar-wrapper { position: relative; display: inline-block; cursor: pointer; }
+
+.photo-preview-circle {
+  width: 140px; height: 140px; border-radius: 50%;
+  border: 4px solid white; box-shadow: 0 10px 30px rgba(0, 77, 64, 0.1);
+  overflow: hidden; display: flex; align-items: center; justify-content: center;
+  background: #F0FDF4; color: var(--primary-teal);
+}
+
+.upload-badge-hover {
+  position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
+  background: rgba(0, 77, 64, 0.85); color: white; padding: 6px 14px;
+  border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+  white-space: nowrap; backdrop-filter: blur(4px);
+}
+
+.profile-user-name { margin: 24px 0 4px; font-size: 1.6rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.5px; }
+.profile-user-email { margin: 0; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; }
+
+.profile-action-divider { height: 1px; background: var(--border-light); margin: 30px 0; width: 100%; }
+.profile-action-stack { display: flex; flex-direction: column; gap: 12px; }
+
+.logout-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px !important; margin-top: 8px;
+  background: #FEF2F2 !important; color: var(--danger-red) !important;
+}
+.logout-btn:hover { background: var(--danger-red) !important; color: white !important; }
+
+
+/* --- Right Content (Data Forms) --- */
+.profile-data-card { padding: 36px; }
+.card-header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-light); padding-bottom: 20px; }
+.card-title-modern { margin: 0; font-size: 1.3rem; font-weight: 800; color: var(--text-dark); }
+
+.editing-badge { background: #FEF3C7; color: #D97706; padding: 6px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
+
+.modern-details-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 24px; }
+@media (min-width: 600px) { .modern-details-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.detail-group { display: flex; flex-direction: column; gap: 8px; }
+.detail-label-modern { font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 0; }
+
+/* The Read-Only Data Cards */
+.detail-value-modern {
+  font-size: 1.1rem; color: var(--text-dark); font-weight: 600;
+  padding: 14px 18px; background: #F8FAFC; border-radius: 16px;
+  border: 1px solid var(--border-light);
+}
+
+/* Security Idle State */
+.security-status-row {
+  display: flex; align-items: center; gap: 20px; padding: 24px;
+  background: #F0FDF4; border-radius: 20px; border: 1px dashed #A7F3D0;
+}
+.security-icon-wrapper {
+  width: 54px; height: 54px; background: white; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--success-green); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.1);
+}
+.security-status-title { margin: 0 0 4px 0; font-weight: 800; color: var(--text-dark); font-size: 1.1rem; }
+.security-status-desc { margin: 0; color: var(--text-muted); font-size: 0.9rem; font-weight: 600; }
+
+/* Layout Utilities */
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-start { display: flex; justify-content: flex-start; align-items: center; }
+.gap-3 { gap: 16px; }
+.text-small { font-size: 0.85rem; }
+
 /* Profile Upload */
 .photo-upload-wrapper { display: flex; justify-content: center; margin-bottom: 24px; }
 .photo-label { cursor: pointer; position: relative; display: flex; flex-direction: column; align-items: center; }
@@ -1546,6 +1687,32 @@ body { margin: 0; background-color: var(--bg-main); font-family: 'Plus Jakarta S
 .sidebar-link.active {
   color: var(--primary-teal); background: white; font-weight: 700; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
+
+/* --- TOP-LEFT BACK ARROW HEADERS --- */
+.dash-header-left {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.back-arrow-btn {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  margin-left: -8px; /* Visually aligns the arrow perfectly with the left edge */
+  border-radius: 50%;
+  transition: background 0.2s ease;
+  z-index: 10;
+}
+
+.back-arrow-btn:hover {
+  background: rgba(0,0,0,0.05);
+}
 .sidebar-link.active svg { color: var(--primary-teal); }
 .sidebar-logout {
   display: flex; align-items: center; gap: 16px; padding: 16px 24px;
@@ -1561,6 +1728,42 @@ body { margin: 0; background-color: var(--bg-main); font-family: 'Plus Jakarta S
 .profile-mini-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 .greeting-section h1 { font-size: 1.8rem; font-weight: 800; margin: 0 0 20px 0; }
+/* --- PREMIUM PROFILE LAYOUT --- */
+.profile-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Beautiful "Read-Only" Data Cards */
+.detail-item {
+  padding: 16px 20px;
+  background: #F8FAFC;
+  border-radius: 18px;
+  border: 1px solid var(--border-light);
+  font-size: 1.05rem;
+  color: var(--text-dark);
+  font-weight: 700;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);
+}
+
+/* DESKTOP SPLIT VIEW */
+@media (min-width: 768px) {
+  .profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 2.2fr;
+    align-items: start;
+  }
+  .details-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 
 .white-card { background: var(--white); border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
 
