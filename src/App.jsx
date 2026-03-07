@@ -116,6 +116,17 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        // --- STRICT EMAIL VERIFICATION CHECK ---
+        if (!user.emailVerified) {
+          // If they are not verified, kick them out immediately
+          await signOut(auth);
+          setIsLoggedIn(false);
+          setScreen("login");
+          // Only show error if they actually just tried to log in
+          return; 
+        }
+
+        // Only proceed if verified
         setCurrentUser(user);
         setIsLoggedIn(true);
         await fetchUserData(user.uid, user.email);
@@ -158,7 +169,7 @@ export default function App() {
   }, [error]);
 
   const fetchUserData = async (uid, email) => {
-    if (!uid) return;
+    if (!uid || (auth.currentUser && !auth.currentUser.emailVerified)) return;
     try {
       const profileRef = doc(db, 'artifacts', appId, 'users', uid, 'profile', 'main');
       const profileSnap = await getDoc(profileRef);
@@ -269,13 +280,22 @@ if (labSnap.exists()) {
     setError(null);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, loginData.email, loginData.password);
+      
       if (!userCredential.user.emailVerified) {
-        await signOut(auth);
-        setError("Please verify your email.");
+        await signOut(auth); // Force sign out
+        setError("Please verify your email address before logging in.");
+        return;
       }
-    } catch (err) { setError(err.message); }
+      
+      // If verified, onAuthStateChanged will handle the screen switch
+    } catch (err) { 
+      // User-friendly error messages
+      const msg = err.code === 'auth/invalid-credential' 
+        ? "Invalid email or password." 
+        : err.message;
+      setError(msg); 
+    }
   };
-
   // --- NEW: SAVE PROFILE CHANGES TO DATABASE ---
   const handleUpdateProfile = async () => {
     try {
@@ -754,6 +774,24 @@ if (labSnap.exists()) {
                       <label className="input-label">Weight</label>
                       <input required type="number" name="weight" value={userProfile.weight} onChange={handleProfileChange} placeholder="60" className="light-input" />
                     </div>
+                  </div>
+
+                  {/* --- NEW: GENDER DROPDOWN ADDED HERE --- */}
+                  <div className="form-group-1 mt-3">
+                    <label className="input-label">Gender</label>
+                    <select 
+                      required 
+                      name="gender" 
+                      value={userProfile.gender} 
+                      onChange={handleProfileChange} 
+                      className="light-input"
+                      style={{ appearance: 'none', cursor: 'pointer' }}
+                    >
+                      <option value="" disabled>Select Gender</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="prefer_not_to_say">Prefer not to say</option>
+                    </select>
                   </div>
 
                   <div className="form-group-2 mt-3">
@@ -1273,6 +1311,7 @@ if (labSnap.exists()) {
                             className="light-input" 
                             placeholder="••••••••" 
                           />
+                          {/* Toggle visibility for Current Password */}
                           <span className="eye-icon" onClick={() => setShowProfilePasswords(prev => ({...prev, current: !prev.current}))}>
                             {showProfilePasswords.current ? <Icons.Eye /> : <Icons.EyeOff />}
                           </span>
@@ -1290,6 +1329,7 @@ if (labSnap.exists()) {
                               className="light-input" 
                               placeholder="••••••••" 
                             />
+                            {/* Toggle visibility for New Password */}
                             <span className="eye-icon" onClick={() => setShowProfilePasswords(prev => ({...prev, new: !prev.new}))}>
                               {showProfilePasswords.new ? <Icons.Eye /> : <Icons.EyeOff />}
                             </span>
@@ -1306,6 +1346,7 @@ if (labSnap.exists()) {
                               className="light-input" 
                               placeholder="••••••••" 
                             />
+                            {/* Toggle visibility for Confirm Password */}
                             <span className="eye-icon" onClick={() => setShowProfilePasswords(prev => ({...prev, confirm: !prev.confirm}))}>
                               {showProfilePasswords.confirm ? <Icons.Eye /> : <Icons.EyeOff />}
                             </span>
@@ -1493,6 +1534,31 @@ if (labSnap.exists()) {
                   <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Date & Time</p>
                   <p style={{ margin: '4px 0 0 0', fontSize: '1.1rem', color: '#1F2937', fontWeight: 800 }}>{new Date().toLocaleDateString('en-GB')}, {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                 </div>
+              </div>
+
+              {/* --- NEW: SYMPTOMS REPORTED SECTION --- */}
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1F2937', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.4rem' }}>📋</span> Symptoms Reported
+              </h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '32px' }}>
+                {Object.keys(selectedSymptoms).filter(s => selectedSymptoms[s]).length > 0 ? (
+                  Object.keys(selectedSymptoms).filter(s => selectedSymptoms[s]).map((symptom, idx) => (
+                    <span key={idx} style={{ 
+                      background: '#F1F5F9', 
+                      color: '#475569', 
+                      padding: '8px 16px', 
+                      borderRadius: '50px', 
+                      fontSize: '0.85rem', 
+                      fontWeight: 700,
+                      border: '1px solid #E2E8F0',
+                      textTransform: 'capitalize'
+                    }}>
+                      {symptom.replace(/_/g, " ")}
+                    </span>
+                  ))
+                ) : (
+                  <p style={{ color: '#94A3B8', fontSize: '0.9rem', fontStyle: 'italic' }}>No symptoms selected.</p>
+                )}
               </div>
 
               {/* AI Predictions */}
@@ -1924,7 +1990,13 @@ body { margin: 0; background-color: var(--bg-main); font-family: 'Plus Jakarta S
 .icon-bubble { width: 44px; height: 44px; border-radius: 12px; background: white; display: flex; align-items: center; justify-content: center; }
 .teal-bg { background: #e0f2f1; } .orange-bg { background: #ffedd5; }
 .mini-action { display: flex; align-items: center; gap: 12px; padding: 16px; cursor: pointer; }
-.mini-action h4 { margin: 0; font-size: 0.95rem; font-weight: 700; }
+.mini-action h4 { margin: 0; font-size: 0.95rem; font-weight: 700; }\
+
+.dark .printable-report-capture span {
+  /* This ensures the symptom badges stay light-colored in the printable report even if the app is in dark mode */
+  background: #F1F5F9 !important;
+  color: #475569 !important;
+}
 
 /* Timeline */
 .section-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
