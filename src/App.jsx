@@ -49,7 +49,8 @@ const Icons = {
   MedLogo: ({ size = 28, className="teal-icon" }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/><path d="M10 3h4v4h4v4h-4v4h-4v-4H6V7h4z"/></svg>,
   User: ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   History: ({ size = 24, className }) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>,
-  
+  Moon: ({ size = 20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>,
+  Sun: ({ size = 20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>,
   Home: ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>,
   Clipboard: ({ size = 24, className }) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14h6"/><path d="M9 18h6"/><path d="M9 10h.01"/></svg>,
   Menu: ({ size = 24, className }) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
@@ -70,6 +71,13 @@ export default function App() {
   const [screen, setScreen] = useState("login");
   const [symptoms, setSymptoms] = useState([]);
   const [selectedSymptoms, setSelectedSymptoms] = useState({});
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   const [results, setResults] = useState([]);
   const [precautions, setPrecautions] = useState("");
   const [history, setHistory] = useState([]);
@@ -93,6 +101,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [labHistory, setLabHistory] = useState([]);
   const [historyTab, setHistoryTab] = useState("assessment"); 
+  
   
 
   const [userProfile, setUserProfile] = useState({
@@ -658,9 +667,9 @@ if (labSnap.exists()) {
   const recentActivity = allActivity.length > 0 ? allActivity[0] : null;
 
   return (
-    <div className="med-ai-root">
+    <div className={`med-ai-root ${theme}`}>
       <style>{css}</style>
-      
+
       {notification && <div className="notification-toast">{notification}</div>}
       {error && <div className="error-toast">{error}</div>}
 
@@ -826,9 +835,23 @@ if (labSnap.exists()) {
                 <h2 className="header-title" style={{ margin: 0 }}>Dashboard</h2>
               </div>
               
-              {/* Right Side: Profile Avatar */}
-              <div className="profile-mini-avatar" onClick={() => setScreen("profile")} style={{cursor: 'pointer', position: 'relative', zIndex: 10}}>
-                {userProfile.photo ? <img src={userProfile.photo} alt="User" /> : <Icons.User size={20}/>}
+              {/* Right Side: Theme Toggle + Profile Avatar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <button 
+                  onClick={toggleTheme} 
+                  style={{ 
+                    background: 'var(--white)', border: '1px solid var(--border-light)', 
+                    borderRadius: '50%', width: '40px', height: '40px', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                    cursor: 'pointer', color: 'var(--text-dark)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' 
+                  }}
+                >
+                  {theme === 'light' ? <Icons.Moon size={20} /> : <Icons.Sun size={20} />}
+                </button>
+
+                <div className="profile-mini-avatar" onClick={() => setScreen("profile")} style={{cursor: 'pointer', position: 'relative', zIndex: 10}}>
+                  {userProfile.photo ? <img src={userProfile.photo} alt="User" /> : <Icons.User size={20}/>}
+                </div>
               </div>
               
             </div>
@@ -1805,6 +1828,43 @@ body { margin: 0; background-color: var(--bg-main); font-family: 'Plus Jakarta S
   flex-direction: column;
   gap: 24px;
 }
+  /* --- DARK THEME OVERRIDES --- */
+.dark {
+  --primary-teal: #2DD4BF; /* Brighter, glowing teal for dark mode text/accents */
+  --primary-light: #14B8A6;
+  --bg-main: #0F172A; /* Deep Slate Background */
+  --white: #1E293B; /* Slate Card Background */
+  --text-dark: #F8FAFC; /* White Text */
+  --text-muted: #94A3B8; /* Muted Slate Text */
+  --border-light: #334155; /* Dark Borders */
+}
+
+/* Specific Dark Mode Tweaks */
+.dark .sidebar-menu {
+  background: #0B1120;
+  border-right: 1px solid var(--border-light);
+}
+.dark .sidebar-header-logo h2 {
+  color: #F8FAFC !important;
+}
+.dark .sidebar-link.active {
+  background: #1E293B;
+  color: var(--primary-teal);
+}
+.dark .btn-teal-primary {
+  background: #004D40; /* Keep the button solid green in dark mode */
+  color: white;
+}
+.dark .btn-teal-primary:hover {
+  background: #00695C;
+}
+.dark .light-input {
+  background: #0F172A;
+  color: #F8FAFC;
+}
+.dark .checkbox-square {
+  background: #0F172A;
+}
 
 .details-grid {
   display: grid;
@@ -1885,6 +1945,26 @@ body { margin: 0; background-color: var(--bg-main); font-family: 'Plus Jakarta S
   70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 
   100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } 
 }
+
+/* --- BULLETPROOF DARK MODE FIX FOR SYMPTOMS --- */
+.dark .symptom-row-clean {
+  background: var(--white) !important; 
+  border-color: var(--border-light) !important;
+}
+
+.dark .symptom-name {
+  color: var(--text-dark) !important;
+}
+
+.dark .checkbox-square {
+  background: var(--bg-main) !important;
+  border-color: var(--border-light) !important;
+}
+
+.dark .checkbox-square.checked {
+  background: var(--primary-teal) !important;
+  border-color: var(--primary-teal) !important;
+}
 .listening-pulse { animation: pulse-mic 1.5s infinite; }
 .category-pills { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
 .pill { padding: 8px 20px; background: var(--white); border-radius: 50px; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; cursor: pointer; border: 1px solid var(--border-light); }
@@ -1901,6 +1981,74 @@ body { margin: 0; background-color: var(--bg-main); font-family: 'Plus Jakarta S
 .count-num { font-weight: 800; font-size: 1.1rem; line-height: 1; }
 .count-text { font-size: 0.7rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; }
 .btn-analyze { background: var(--white); color: var(--primary-teal); border: none; padding: 10px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+/* --- DARK MODE FIX FOR PROFILE & DATA BOXES --- */
+.dark .detail-value-modern {
+  background: var(--white) !important;
+  color: var(--text-dark) !important;
+  border-color: var(--border-light) !important;
+}
+
+.dark .security-status-row {
+  background: rgba(16, 185, 129, 0.1) !important; /* Soft green tint for the security box */
+  border: 1px dashed rgba(16, 185, 129, 0.3) !important;
+}
+
+.dark .security-status-title {
+  color: #10B981 !important; /* Keep the success green readable */
+}
+
+.dark .security-status-desc {
+  color: var(--text-muted) !important;
+}
+
+.dark .editing-badge {
+  background: rgba(217, 119, 6, 0.2) !important;
+  color: #FBBF24 !important;
+}
+
+/* --- DARK MODE FIX FOR BMI GAUGE --- */
+.dark .gauge-needle, 
+.dark .gauge-needle::after {
+  background: #FFFFFF !important; /* Forces the needle to be white in dark mode */
+}
+
+.dark .bmi-gauge::after {
+  background: var(--white) !important; /* Ensures the inner arc of the gauge matches the card color */
+}
+
+/* --- DARK MODE TEXT & DASHBOARD CONTRAST FIX --- */
+.dark .header-title, 
+.dark .greeting-section h1,
+.dark .section-title-row h3,
+.dark .activity-title {
+  color: #FFFFFF !important; /* Forces pure white for main headings */
+}
+
+.dark .mini-action h4,
+.dark .mini-action p {
+  color: #FFFFFF !important; /* Fixes "View History" and "Lab Report" card text visibility */
+}
+
+.dark .time-text {
+  color: #94A3B8 !important; /* Slate-400 for secondary info like timestamps */
+}
+
+/* Fixes the "Recent Activity" cards that look too dark/faded */
+.dark .recent-timeline-card {
+  background: var(--white) !important;
+  border: 1px solid var(--border-light);
+}
+
+.dark .recent-activity-section h3 {
+    color: #FFFFFF !important;
+}
+
+/* Fixes the ghosting/faded look on secondary buttons */
+.dark .btn-view-light {
+  background: #334155 !important; /* Darker slate button */
+  color: #FFFFFF !important;
+}
 
 /* --- RESULTS SCREEN --- */
 .results-teal-header { background: var(--primary-teal); padding: 24px 20px 80px; position: relative; }
