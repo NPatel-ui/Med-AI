@@ -21,7 +21,7 @@ import {
   getDoc 
 } from "firebase/firestore";
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://med-ai-1-is35.onrender.com";
+const API_BASE = import.meta.env.VITE_API_URL || "https://med-ai-1-is35.onrender.com";;
 
 // --- FIREBASE INIT ---
 let firebaseConfig = {
@@ -77,11 +77,18 @@ export default function App() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({ current: "", new: "", confirm: "" });
-  
+  const [isListening, setIsListening] = useState(false);
+  const [spokenText, setSpokenText] = useState("");
+  const [reportFile, setReportFile] = useState(null);
+  const [parsedReport, setParsedReport] = useState(null);
+  const [isParsing, setIsParsing] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [labHistory, setLabHistory] = useState([]);
+  const [historyTab, setHistoryTab] = useState("assessment"); 
+  
 
   const [userProfile, setUserProfile] = useState({
     name: "", age: "", weight: "", height: "", gender: "",
@@ -327,6 +334,118 @@ export default function App() {
     setIsSidebarOpen(false); // Closes sidebar if open
   };
 
+  // --- NEW: VOICE INPUT FUNCTION ---
+  const handleVoiceInput = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setError("Your browser doesn't support voice recognition. Try Chrome!");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US'; 
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setSearchQuery("Listening..."); // Gives instant feedback to the user
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setSpokenText(transcript);
+      setSearchQuery(transcript); 
+
+      // --- THE NEW MAGIC: AUTO-TICK THE CHECKBOXES ---
+      const spokenWords = transcript.toLowerCase();
+      
+      setSelectedSymptoms(prev => {
+        const updatedSelections = { ...prev };
+        
+        symptoms.forEach(symptom => {
+          // Converts backend format 'high_fever' to normal English 'high fever'
+          const cleanSymptom = symptom.replace(/_/g, " ").toLowerCase();
+          
+          // If the spoken sentence contains the symptom word, check the box!
+          if (spokenWords.includes(cleanSymptom)) {
+            updatedSelections[symptom] = true;
+          }
+        });
+        
+        return updatedSelections;
+      });
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error", event.error);
+      setIsListening(false);
+      setSearchQuery(""); 
+      setError("Could not hear you properly. Please try again.");
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
+  // --- NEW: UPLOAD MEDICAL REPORT ---
+  const handleReportUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      setError("Please upload a PDF file.");
+      return;
+    }
+
+    setReportFile(file);
+    setIsParsing(true);
+    setScreen("parsing_loading"); 
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch(`${API_BASE}/parse-report`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Failed to analyze report");
+      
+      const data = await res.json();
+      setParsedReport(data);
+
+      // --- NEW: SAVE TO LAB HISTORY ---
+      const newLabEntry = {
+        type: 'lab_report',
+        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        reportData: data
+      };
+      
+      const updatedLabHistory = [newLabEntry, ...labHistory].slice(0, 10); // Keep last 10
+      setLabHistory(updatedLabHistory);
+      
+      if (currentUser) {
+        await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'labHistory'), { records: updatedLabHistory }, { merge: true });
+      }
+      // --------------------------------
+
+      setScreen("report_results");
+      setNotification("Report analyzed successfully!");
+      
+    } catch (err) {
+      console.error(err);
+      setError("Error analyzing report. Please try again.");
+      setScreen("home");
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
   async function analyzeSymptoms() {
     setError(null);
     const selected = Object.keys(selectedSymptoms).filter(s => selectedSymptoms[s]);
@@ -440,6 +559,15 @@ export default function App() {
   };
 
   const filteredSymptoms = symptoms.filter(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  // --- NEW: COMBINE ALL HISTORY FOR DASHBOARD ---
+  const allActivity = [...history, ...labHistory].sort((a, b) => {
+    // Convert '07 Mar 2026 12:19 pm' into real Date objects to compare them
+    const dateA = new Date(`${a.date} ${a.time}`);
+    const dateB = new Date(`${b.date} ${b.time}`);
+    return dateB - dateA; // Sorts newest to oldest
+  });
+  const recentActivity = allActivity.length > 0 ? allActivity[0] : null;
 
   return (
     <div className="med-ai-root">
@@ -649,10 +777,17 @@ export default function App() {
                     <h4>View History</h4>
                   </div>
 
-                  <div className="white-card mini-action" onClick={() => setNotification("Health Tips module coming soon!")}>
-                    <div className="icon-bubble orange-bg">💡</div>
-                    <h4>Health Tips</h4>
-                  </div>
+                  {/* Smart PDF Upload Button */}
+                  <label className="white-card mini-action" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                      <div className="icon-bubble orange-bg"><Icons.Clipboard size={20} className="text-dark" /></div>
+                      <div>
+                        <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Upload Lab Report</h4>
+                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Smart PDF Analysis</p>
+                      </div>
+                    </div>
+                    <input type="file" accept="application/pdf" onChange={handleReportUpload} style={{ display: 'none' }} />
+                  </label>
                 </div>
             </div>
 
@@ -662,18 +797,38 @@ export default function App() {
                 <span className="dots">•••</span>
               </div>
               
-              {history.length > 0 ? (
+              {recentActivity ? (
                 <div className="white-card recent-timeline-card">
-                  <div className="timeline-dot"></div>
+                  {/* Changes dot color based on activity type */}
+                  <div className="timeline-dot" style={{
+                    borderColor: recentActivity.type === 'lab_report' ? '#ffedd5' : '#e0f2f1', 
+                    background: recentActivity.type === 'lab_report' ? 'var(--accent-orange)' : 'var(--primary-teal)'
+                  }}></div>
+                  
                   <div className="timeline-content">
-                    <p className="time-text">{history[0].date}, {history[0].time}</p>
-                    <p className="symptoms-preview">
-                      {history[0].symptoms && history[0].symptoms.length > 0 
-                        ? history[0].symptoms.slice(0, 2).map(s => s.replace(/_/g, " ")).join(", ") + (history[0].symptoms.length > 2 ? "..." : "")
-                        : "No specific symptoms"}
-                    </p>
+                    <p className="time-text">{recentActivity.date}, {recentActivity.time}</p>
+                    
+                    {/* SMART RENDER: Lab Report vs Symptom Assessment */}
+                    {recentActivity.type === 'lab_report' ? (
+                       <>
+                         <h4 style={{margin: '0 0 4px 0', fontSize: '0.95rem', color: 'var(--text-dark)'}}>Lab Report Analysis</h4>
+                         <p className="symptoms-preview" style={{fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>
+                           {recentActivity.reportData?.summary || "Report scanned successfully"}
+                         </p>
+                       </>
+                    ) : (
+                       <>
+                         <h4 style={{margin: '0 0 4px 0', fontSize: '0.95rem', color: 'var(--text-dark)'}}>{recentActivity.topMatch || "Symptom Assessment"}</h4>
+                         <p className="symptoms-preview" style={{fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500}}>
+                           {recentActivity.symptoms && recentActivity.symptoms.length > 0 
+                             ? recentActivity.symptoms.slice(0, 2).map(s => s.replace(/_/g, " ")).join(", ") + (recentActivity.symptoms.length > 2 ? "..." : "")
+                             : "No specific symptoms"}
+                         </p>
+                       </>
+                    )}
                   </div>
-                  <button className="btn-view-light" onClick={(e) => { e.stopPropagation(); setViewingHistoryItem(history[0]); }}>View</button>
+                  
+                  <button className="btn-view-light" onClick={(e) => { e.stopPropagation(); setViewingHistoryItem(recentActivity); }}>View</button>
                 </div>
               ) : (
                 <p className="text-muted text-center mt-3">No activity yet.</p>
@@ -693,9 +848,35 @@ export default function App() {
               <div style={{width: 28}}></div>
             </div>
 
-            <div className="search-box mb-3">
+            <div className="search-box mb-3" style={{ display: 'flex', alignItems: 'center' }}>
               <Icons.Search size={20} className="text-muted" />
-              <input placeholder="Search Symptoms..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              <input 
+                placeholder="Search or say symptoms..." 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent' }}
+              />
+              
+              {/* --- NEW: MIC BUTTON --- */}
+              <button 
+                onClick={handleVoiceInput} 
+                className={isListening ? 'listening-pulse' : ''}
+                style={{
+                  borderRadius: '50%', width: '40px', height: '40px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: isListening ? 'var(--danger-red)' : '#e0f2f1',
+                  color: isListening ? 'white' : 'var(--primary-teal)',
+                  border: 'none', cursor: 'pointer',
+                  transition: 'all 0.3s ease', marginLeft: '8px'
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <line x1="12" y1="19" x2="12" y2="23"></line>
+                  <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+              </button>
             </div>
 
            
@@ -737,10 +918,22 @@ export default function App() {
               <Icons.Search size={20} className="text-muted" />
               <input placeholder="Search Reports..." />
             </div>
+
+            {/* --- NEW: TAB SWITCHER --- */}
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+              <button onClick={() => setHistoryTab('assessment')} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: historyTab === 'assessment' ? 'var(--primary-teal)' : 'white', color: historyTab === 'assessment' ? 'white' : 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', transition: '0.2s' }}>
+                Assessments
+              </button>
+              <button onClick={() => setHistoryTab('lab')} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: historyTab === 'lab' ? 'var(--primary-teal)' : 'white', color: historyTab === 'lab' ? 'white' : 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', transition: '0.2s' }}>
+                Lab Reports
+              </button>
+            </div>
             
             <div className="history-list-full desktop-grid-history">
-              {history.length > 0 ? history.map((item, idx) => (
-                 <div key={idx} className="white-card mb-3 history-grid-item" onClick={() => setViewingHistoryItem(item)} style={{cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+              {/* TAB 1: ASSESSMENTS */}
+              {historyTab === 'assessment' && (
+                history.length > 0 ? history.map((item, idx) => (
+                  <div key={idx} className="white-card mb-3 history-grid-item" onClick={() => setViewingHistoryItem(item)} style={{cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '8px'}}>
                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
                        <div>
                           <p style={{margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600}}>{item.date}, {item.time}</p>
@@ -754,15 +947,25 @@ export default function App() {
                              {s.replace(/_/g, " ")}
                           </span>
                        ))}
-                       {item.symptoms && item.symptoms.length > 3 && (
-                          <span style={{fontSize: '0.75rem', background: '#f3f4f6', color: 'var(--text-muted)', padding: '4px 8px', borderRadius: '4px', fontWeight: 600}}>
-                             +{item.symptoms.length - 3} more
-                          </span>
-                       )}
                     </div>
                  </div>
-              )) : (
-                 <p className="text-center text-muted mt-4">No assessment history found.</p>
+                )) : <p className="text-center text-muted mt-4">No assessment history found.</p>
+              )}
+
+              {/* TAB 2: LAB REPORTS */}
+              {historyTab === 'lab' && (
+                labHistory.length > 0 ? labHistory.map((item, idx) => (
+                  <div key={idx} className="white-card mb-3 history-grid-item" onClick={() => setViewingHistoryItem(item)} style={{cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '8px', borderLeft: '4px solid var(--accent-orange)'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
+                       <div>
+                          <p style={{margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600}}>{item.date}, {item.time}</p>
+                          <h4 style={{margin: '4px 0 0 0', color: 'var(--text-dark)'}}>Lab Report Analysis</h4>
+                       </div>
+                       <button className="btn-view-light" onClick={(e) => { e.stopPropagation(); setViewingHistoryItem(item); }}>View</button>
+                    </div>
+                    <p style={{fontSize: '0.85rem', color: 'var(--text-muted)', margin: '4px 0 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{item.reportData?.summary}</p>
+                 </div>
+                )) : <p className="text-center text-muted mt-4">No lab report history found.</p>
               )}
             </div>
           </div>
@@ -926,7 +1129,8 @@ export default function App() {
             position: 'absolute', top: 0, left: 0, width: '100%', minHeight: '100vh', 
             background: 'var(--bg-main)', zIndex: 2000, padding: '24px 20px 100px', boxSizing: 'border-box'
           }}>
-            <div className="printable-report-capture" style={{background: 'var(--bg-main)', padding: '20px', borderRadius: '16px', maxWidth: '480px', margin: '0 auto'}}>
+            <div className="printable-report-capture" style={{background: 'var(--bg-main)', padding: '0', borderRadius: '16px', maxWidth: '480px', margin: '0 auto'}}>
+              
               <div className="dash-header no-border mb-4">
                 <div data-html2canvas-ignore="true" style={{position: 'relative', zIndex: 10, cursor: 'pointer', padding: '5px'}} onClick={() => setViewingHistoryItem(null)}>
                    <Icons.ArrowLeft size={28} className="text-dark" />
@@ -935,45 +1139,96 @@ export default function App() {
                 <div style={{width: 28}}></div>
               </div>
 
-              <div className="white-card mb-4" style={{boxShadow: '0 10px 30px rgba(0,0,0,0.05)'}}>
-                <h4 style={{marginTop: 0, marginBottom: '8px', fontSize: '1rem', color: 'var(--text-dark)'}}>Date & Time</h4>
-                <p className="text-muted" style={{margin: '0 0 24px 0', fontSize: '0.95rem', fontWeight: 500}}>
-                  {viewingHistoryItem.date}, {viewingHistoryItem.time}
-                </p>
+              <p className="text-center text-muted mb-4" style={{fontWeight: 600, fontSize: '0.9rem'}}>
+                Analyzed on: {viewingHistoryItem.date}, {viewingHistoryItem.time}
+              </p>
 
-                <h4 style={{marginBottom: '12px', fontSize: '1rem', color: 'var(--text-dark)'}}>Symptoms Selected</h4>
-                <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px'}}>
-                  {viewingHistoryItem.symptoms && viewingHistoryItem.symptoms.map((s, i) => (
-                     <span key={i} style={{fontSize: '0.85rem', background: '#fee2e2', color: '#dc2626', padding: '6px 12px', borderRadius: '8px', fontWeight: 600, textTransform: 'capitalize'}}>
-                        {s.replace(/_/g, " ")}
-                     </span>
-                  ))}
-                </div>
-
-                <h4 style={{marginBottom: '16px', fontSize: '1rem', color: 'var(--text-dark)'}}>Top 3 Predictions</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
-                {(viewingHistoryItem.allPredictions || [viewingHistoryItem.topMatch]).slice(0, 3).map((r, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: '16px', background: '#fafafa', border: '1px solid var(--border-light)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--danger-light)', color: 'var(--danger-red)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.1rem' }}>
-                          {i + 1}
-                        </div>
-                        <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-dark)', fontWeight: 700 }}>{r}</h4>
-                      </div>
-                      <div style={{ fontSize: '1.5rem' }}>🦠</div>
-                    </div>
-                ))}
-              </div>
-                  
+              {/* --- SMART RENDER: EXACT LAB REPORT UI VS SYMPTOMS UI --- */}
+              {viewingHistoryItem.type === 'lab_report' || viewingHistoryItem.reportData ? (
                 
-              
+                /* ================= EXACT LAB REPORT UI ================= */
+                <div>
+                  <div className="white-card mb-4" style={{ borderLeft: '4px solid var(--primary-teal)'}}>
+                    <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-dark)' }}>AI Summary</h4>
+                    <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.6 }}>{viewingHistoryItem.reportData?.summary}</p>
+                  </div>
 
-                <div data-html2canvas-ignore="true">
-                  <button className="btn-teal-primary full-width mt-4 desktop-w-auto" style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'}} onClick={exportReport}>
-                    <Icons.Download size={20} /> Download Image
-                  </button>
+                  <div className="section-title-row">
+                    <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Key Findings</h3>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                    {viewingHistoryItem.reportData?.abnormal_results && viewingHistoryItem.reportData.abnormal_results.length > 0 ? (
+                      viewingHistoryItem.reportData.abnormal_results.map((item, idx) => (
+                        <div key={idx} className="white-card" style={{ 
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', 
+                          borderLeft: item.status === 'high' ? '4px solid var(--danger-red)' : (item.status === 'low' ? '4px solid var(--accent-orange)' : '4px solid var(--success-green)') 
+                        }}>
+                          <div>
+                            <h4 style={{ margin: '0 0 4px 0', fontSize: '1.05rem', color: 'var(--text-dark)' }}>{item.test_name}</h4>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>{item.simple_meaning}</p>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ 
+                              fontSize: '1.3rem', fontWeight: 800, 
+                              color: item.status === 'high' ? 'var(--danger-red)' : (item.status === 'low' ? 'var(--accent-orange)' : 'var(--success-green)') 
+                            }}>
+                              {item.value}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Normal: {item.normal_range}</div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="white-card text-center text-muted">All tested levels appear to be within normal ranges.</div>
+                    )}
+                  </div>
+
+                  <div className="white-card mt-4" style={{ background: '#f0fdfa', border: '1px solid #ccfbf1' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '1.2rem' }}>💡</span>
+                      <h4 style={{ margin: 0, color: 'var(--primary-teal)' }}>Next Steps</h4>
+                    </div>
+                    <p style={{ margin: 0, color: 'var(--text-dark)', lineHeight: 1.6, fontWeight: 500 }}>{viewingHistoryItem.reportData?.recommendation}</p>
+                  </div>
                 </div>
+
+              ) : (
+                
+                /* ================= EXACT SYMPTOMS UI ================= */
+                <div className="white-card mb-4" style={{boxShadow: '0 10px 30px rgba(0,0,0,0.05)'}}>
+                  <h4 style={{marginBottom: '12px', fontSize: '1rem', color: 'var(--text-dark)'}}>Symptoms Selected</h4>
+                  <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px'}}>
+                    {viewingHistoryItem.symptoms && viewingHistoryItem.symptoms.map((s, i) => (
+                       <span key={i} style={{fontSize: '0.85rem', background: '#fee2e2', color: '#dc2626', padding: '6px 12px', borderRadius: '8px', fontWeight: 600, textTransform: 'capitalize'}}>
+                          {s.replace(/_/g, " ")}
+                       </span>
+                    ))}
+                  </div>
+
+                  <h4 style={{marginBottom: '16px', fontSize: '1rem', color: 'var(--text-dark)'}}>Top Predictions</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+                    {(viewingHistoryItem.allPredictions || [viewingHistoryItem.topMatch]).slice(0, 3).map((r, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: '16px', background: '#fafafa', border: '1px solid var(--border-light)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--danger-light)', color: 'var(--danger-red)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.1rem' }}>
+                              {i + 1}
+                            </div>
+                            <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-dark)', fontWeight: 700 }}>{r}</h4>
+                          </div>
+                          <div style={{ fontSize: '1.5rem' }}>🦠</div>
+                        </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div data-html2canvas-ignore="true" style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
+                <button className="btn-teal-primary desktop-w-auto" style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', minWidth: '200px'}} onClick={exportReport}>
+                  <Icons.Download size={20} /> Download Image
+                </button>
               </div>
+
             </div>
           </div>
         )}
@@ -983,6 +1238,99 @@ export default function App() {
           <div className="loading-state anim-fade-in content-container">
             <div className="pulse-loader"><Icons.MedLogo size={60} /></div>
             <h3 className="mt-3">Analyzing Symptoms...</h3>
+          </div>
+        )}
+
+        {/* --- PDF PARSING LOADING SCREEN --- */}
+        {screen === "parsing_loading" && (
+          <div className="loading-state anim-fade-in content-container">
+            <div className="pdf-scanner-animation" style={{
+                position: 'relative', width: '90px', height: '90px', display: 'flex', alignItems: 'center', 
+                justifyContent: 'center', background: 'white', borderRadius: '20px', 
+                boxShadow: '0 10px 30px rgba(0,0,0,0.08)', overflow: 'hidden', border: '2px solid #e0f2f1'
+            }}>
+              <Icons.Clipboard size={48} className="teal-icon" />
+              <div style={{
+                  position: 'absolute', top: 0, left: 0, width: '100%', height: '4px',
+                  background: 'var(--primary-teal)', boxShadow: '0 0 15px 2px var(--primary-teal)',
+                  animation: 'scan 2s cubic-bezier(0.4, 0, 0.2, 1) infinite'
+              }}></div>
+            </div>
+            <style>{`@keyframes scan { 0%, 100% { top: -10px; opacity: 0; } 10% { opacity: 1; } 50% { top: 100%; opacity: 1; } 90% { opacity: 0; } }`}</style>
+            <h3 className="mt-4" style={{ color: 'var(--text-dark)' }}>Reading Lab Report...</h3>
+            <p className="text-muted text-center" style={{ maxWidth: '80%' }}>
+              Our AI is extracting and simplifying your medical data. This usually takes a few seconds.
+            </p>
+          </div>
+        )}
+
+        {/* --- LAB REPORT RESULTS SCREEN --- */}
+        {screen === "report_results" && parsedReport && (
+          <div className="results-screen anim-fade-in content-container printable-report-capture" style={{ paddingBottom: '120px', backgroundColor: 'var(--bg-main)' }}>
+            <div className="dash-header mb-4">
+              <div data-html2canvas-ignore="true" style={{cursor: 'pointer', padding: '5px'}} onClick={() => setScreen("home")}>
+                <Icons.ArrowLeft size={28} className="text-dark" />
+              </div>
+              <h2 className="header-title">Report Analysis</h2>
+              <div style={{width: 28}}></div>
+            </div>
+
+            <div className="white-card mb-4" style={{ borderLeft: '4px solid var(--primary-teal)'}}>
+              <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-dark)' }}>AI Summary</h4>
+              <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.6 }}>{parsedReport.summary}</p>
+            </div>
+
+            <div className="section-title-row">
+              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Key Findings</h3>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+              {parsedReport.abnormal_results && parsedReport.abnormal_results.length > 0 ? (
+                parsedReport.abnormal_results.map((item, idx) => (
+                  <div key={idx} className="white-card" style={{ 
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', 
+                    borderLeft: item.status === 'high' ? '4px solid var(--danger-red)' : (item.status === 'low' ? '4px solid var(--accent-orange)' : '4px solid var(--success-green)') 
+                  }}>
+                    <div>
+                      <h4 style={{ margin: '0 0 4px 0', fontSize: '1.05rem', color: 'var(--text-dark)' }}>{item.test_name}</h4>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>{item.simple_meaning}</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ 
+                        fontSize: '1.3rem', fontWeight: 800, 
+                        color: item.status === 'high' ? 'var(--danger-red)' : (item.status === 'low' ? 'var(--accent-orange)' : 'var(--success-green)') 
+                      }}>
+                        {item.value}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Normal: {item.normal_range}</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="white-card text-center text-muted">All tested levels appear to be within normal ranges.</div>
+              )}
+            </div>
+
+            <div className="white-card mt-4" style={{ background: '#f0fdfa', border: '1px solid #ccfbf1' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '1.2rem' }}>💡</span>
+                <h4 style={{ margin: 0, color: 'var(--primary-teal)' }}>Next Steps</h4>
+              </div>
+              <p style={{ margin: 0, color: 'var(--text-dark)', lineHeight: 1.6, fontWeight: 500 }}>{parsedReport.recommendation}</p>
+            </div>
+            
+            {/* Action Buttons */}
+            <div data-html2canvas-ignore="true" style={{ display: 'flex', gap: '16px', marginTop: '24px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              
+              <button className="btn-outline-teal" onClick={exportReport} style={{ flex: 1, minWidth: '150px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                <Icons.Download size={20} /> Download
+              </button>
+
+              <button className="btn-teal-primary" onClick={() => setScreen("home")} style={{ flex: 1, minWidth: '150px' }}>
+                Done
+              </button>
+
+            </div>
           </div>
         )}
 
@@ -1258,6 +1606,12 @@ body { margin: 0; background-color: var(--bg-main); font-family: 'Plus Jakarta S
 /* --- SYMPTOMS SCREEN --- */
 .search-box { display: flex; align-items: center; gap: 12px; background: var(--white); padding: 14px 16px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
 .search-box input { border: none; outline: none; background: transparent; width: 100%; font-size: 1rem; font-family: inherit; }
+@keyframes pulse-mic { 
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 
+  70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } 
+}
+.listening-pulse { animation: pulse-mic 1.5s infinite; }
 .category-pills { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
 .pill { padding: 8px 20px; background: var(--white); border-radius: 50px; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; cursor: pointer; border: 1px solid var(--border-light); }
 .pill.active { background: var(--primary-teal); color: white; border-color: var(--primary-teal); }
