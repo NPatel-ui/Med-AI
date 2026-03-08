@@ -1650,6 +1650,113 @@ if (labSnap.exists()) {
   );
 }
 
+{/* ==========================================================================
+            MOBILE-CENTRIC PREMIUM RESULTS REPORT
+           ========================================================================== */}
+        {screen === "results" && (
+          <div className="results-screen anim-fade-in content-container" style={{ width: '100%', display: 'flex', flexDirection: 'column', flex: 1, backgroundColor: 'var(--bg-main)', paddingBottom: '120px' }}>
+
+            {/* 1. Header Box (Non-printable) */}
+            <div data-html2canvas-ignore="true" style={{ background: 'var(--primary-teal)', padding: '20px 16px 60px 16px', width: '100%', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div onClick={() => { setSelectedSymptoms({}); setScreen("home"); }} style={{ cursor: 'pointer', zIndex: 10, padding: '5px' }}>
+                  <Icons.ArrowLeft size={28} color="white" />
+                </div>
+                <h2 style={{ margin: 0, color: 'white', fontSize: '1.1rem', fontWeight: 700 }}>Assessment Result</h2>
+                <div style={{ width: 28 }}></div>
+              </div>
+            </div>
+
+            {/* 2. The Printable Report Card */}
+            <div className="printable-report-capture" style={{ background: '#FFFFFF', borderRadius: '24px', padding: '30px 20px', marginTop: '-40px', position: 'relative', flex: 1, boxShadow: '0 10px 30px rgba(0,0,0,0.08)', boxSizing: 'border-box', width: '92%', maxWidth: '500px', alignSelf: 'center', color: '#1F2937' }}>
+
+              {/* Report Header - Optimized for narrow screens */}
+              <div style={{ borderBottom: '2px solid #E5E7EB', paddingBottom: '15px', marginBottom: '20px' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                    <h1 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800, color: '#1F2937' }}>Medical AI Report</h1>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ margin: 0, fontSize: '0.65rem', color: '#6B7280', fontWeight: 800, textTransform: 'uppercase' }}>ID</p>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: '#1F2937', fontWeight: 700 }}>#{new Date().getTime().toString().slice(-6)}</p>
+                    </div>
+                 </div>
+                 <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280', fontWeight: 600 }}>Symptom Assessment Summary</p>
+              </div>
+              
+              {/* Patient Details - Stacked for Mobile */}
+              <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '16px', marginBottom: '24px', border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div>
+                    <p style={{ margin: 0, fontSize: '0.7rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Patient Name</p>
+                    <p style={{ margin: '2px 0 0 0', fontSize: '0.95rem', color: '#1F2937', fontWeight: 800 }}>{userProfile.name || 'User'}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ margin: 0, fontSize: '0.7rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Age / Gender</p>
+                    <p style={{ margin: '2px 0 0 0', fontSize: '0.95rem', color: '#1F2937', fontWeight: 800 }}>{userProfile.age || '--'} / {userProfile.gender ? userProfile.gender.charAt(0).toUpperCase() + userProfile.gender.slice(1) : '--'}</p>
+                  </div>
+                </div>
+                <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '10px' }}>
+                  <p style={{ margin: 0, fontSize: '0.7rem', color: '#6B7280', fontWeight: 700, textTransform: 'uppercase' }}>Date & Time</p>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.9rem', color: '#1F2937', fontWeight: 800 }}>{new Date().toLocaleDateString('en-GB')}, {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                </div>
+              </div>
+
+              {/* Symptoms Section - Rounded Pills */}
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#1F2937', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '1.2rem' }}>📋</span> Symptoms Reported
+              </h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
+                {Object.keys(selectedSymptoms).filter(s => selectedSymptoms[s]).map((symptom, idx) => (
+                  <span key={idx} style={{ background: '#F1F5F9', color: '#475569', padding: '6px 12px', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 700, border: '1px solid #E2E8F0' }}>
+                    {symptom.replace(/_/g, " ")}
+                  </span>
+                ))}
+              </div>
+
+              {/* AI Results Section */}
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#1F2937', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '1.2rem' }}>🎯</span> Identified Diseases
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
+                {results.slice(0, 3).map((r, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderRadius: '12px', background: i === 0 ? '#FEF2F2' : '#F9FAFB', border: i === 0 ? '1px solid #FECACA' : '1px solid #E5E7EB', borderLeftWidth: '5px', borderLeftColor: i === 0 ? '#EF4444' : '#9CA3AF' }}>
+                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: i === 0 ? '#EF4444' : '#D1D5DB', color: '#FFFFFF', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.8rem', marginRight: '12px' }}>{i + 1}</div>
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ margin: 0, fontSize: '0.95rem', color: i === 0 ? '#991B1B' : '#1F2937', fontWeight: 800 }}>{r}</h4>
+                        {i === 0 && <p style={{ margin: 0, fontSize: '0.7rem', color: '#DC2626', fontWeight: 700 }}>Top Probability</p>}
+                      </div>
+                    </div>
+                ))}
+              </div>
+
+              {/* Precautions - Streamlined for Mobile */}
+              <div style={{ background: '#F0FDF4', borderRadius: '16px', padding: '16px', border: '1px solid #A7F3D0' }}>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#065F46', fontWeight: 800 }}>Next Steps:</h4>
+                <p style={{ margin: 0, color: '#065F46', lineHeight: 1.5, fontWeight: 600, fontSize: '0.85rem' }}>
+                  {Array.isArray(precautions) ? precautions[0] : precautions}
+                </p>
+              </div>
+
+              {/* Disclaimer */}
+              <div style={{ marginTop: '24px', paddingTop: '15px', borderTop: '1px dashed #E5E7EB', textAlign: 'center' }}>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: '#6B7280', fontWeight: 500, lineHeight: 1.4 }}>
+                   *AI-generated assessment for tracking only. Not a medical diagnosis.
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div data-html2canvas-ignore="true" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '20px 16px', width: '100%', boxSizing: 'border-box' }}>
+              <button className="btn-outline-teal" onClick={exportReport} style={{ padding: '16px', borderRadius: '14px', background: 'white' }}>
+                <Icons.Download size={20} /> Export Report
+              </button>
+              <button className="btn-teal-primary" onClick={() => { setSelectedSymptoms({}); setScreen("home"); }} style={{ padding: '16px', borderRadius: '14px' }}>
+                Return to Dashboard
+              </button>
+            </div>
+
+          </div>
+        )}
+
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
