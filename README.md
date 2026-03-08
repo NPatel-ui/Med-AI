@@ -1,51 +1,232 @@
-🏥 Med-AI: AI-Powered Disease Prediction & Health Assessment
-Med-AI is a modern, responsive, and intelligent healthcare web application designed to help users identify potential illnesses based on their symptoms. By leveraging a custom Machine Learning backend and a highly intuitive interface, Med-AI provides users with real-time health insights, BMI tracking, and structured medical reports.
+🩺 Med-AI — AI Powered Symptom & Lab Report Analyzer
+
+Med-AI is a modern AI-powered health assistant that helps users analyze symptoms and interpret lab reports using machine learning and natural language processing.
+
+The application provides a mobile-first healthcare dashboard where users can:
+
+Check symptoms
+
+Get AI disease predictions
+
+Upload lab reports for automatic analysis
+
+Track medical history
+
+Manage health profile data
+
+The system combines Machine Learning, Generative AI, and a full-stack architecture to deliver a smooth and intelligent healthcare experience.
+
+🚀 Live Demo
+
+Frontend: https://med-ai-main.vercel.app
+Backend API: https://med-ai-1-is35.onrender.com
 
 ✨ Key Features
-🚀 Core Functionality
-🔐 Authentication System: Secure email & password login via Firebase Auth. Features include new account creation, mandatory email verification before login, secure session persistence, and seamless logout.
+🔐 Secure Authentication
 
-👤 Comprehensive Profile Management: Users build a dedicated health profile storing their Full Name, Age, Height, Weight, City, State, Mobile Number, and an optional Profile Photo—all safely secured in Firebase Firestore.
+Firebase Authentication
 
-🧮 Dynamic BMI Calculator: Instantly calculates the user's Body Mass Index (BMI = weight / (height in m)²) and displays their clinical health category (e.g., Underweight, Healthy, Overweight) directly on the dashboard.
+Email verification
 
-🩺 Interactive Symptoms Checklist: A powerful multi-select grid allowing users to filter symptoms by category (All, Fever, Body, Mind) or search via text. Features a smart "Action Capsule" keeping track of selected symptoms.
+Password reset
 
-🤖 AI Disease Prediction Engine: Connects to a robust ML backend hosted on Render via a POST /predict endpoint. It processes the user's symptoms and returns the Top 3 predicted diseases along with their calculated probability percentages.
+Secure password update
 
-🕒 Clinical History Tracking: Every assessment is archived in Firestore. Users can browse their past health checks (Date, Time, Symptoms, Predictions) in the dedicated History tab.
+🧠 AI Symptom Analysis
 
-🎨 UI & UX Innovations
-🖥️ Modern Medical Theme: A clean, minimalist interface utilizing a professional Teal-based medical color palette, soft gradients, rounded card components, and a consistent typography hierarchy.
+Users can select symptoms and receive:
 
-🧭 Structured Navigation: Features a fixed sidebar navigation for desktop and a sleek bottom navigation bar for mobile, ensuring rapid access to the Dashboard, Assessments, History, and Profile.
+Top predicted diseases
 
-📊 Personalized Dashboard: Greets the user by name, displays their active BMI gauge, shows recent activity timelines, and provides quick-action cards to start new assessments or view history.
+AI generated precautions
 
-🏆 Advanced Results Display: Predictions are shown on beautifully ranked cards (1st, 2nd, 3rd) complete with color-coded severity indicators, percentage probabilities, and dynamic recommended next steps (e.g., Rest, Consult Doctor).
+Smart medical suggestions
 
-🖼️ Professional Report Generation (Upgraded!): Instead of plain text, users can now export their assessment as a High-Resolution PNG Image. This beautifully structured snapshot includes the Med-AI header, user demographics, BMI, symptoms, predictions, and recommendations—perfect for sharing with healthcare providers.
+🎤 Voice-Based Symptom Input
 
-📱 Fully Responsive Architecture: Built with an adaptive grid system that fluidly transforms from a wide-screen desktop dashboard (with a persistent sidebar) to a stacked, app-like mobile experience.
+Users can speak symptoms and the system automatically:
 
-🛠️ Technology Stack
-Frontend: React.js, standard CSS3 (Custom responsive grid & flexbox architecture)
+Converts speech to text
 
-Backend / AI: Python, Machine Learning Model (Deployed on Render)
+Matches spoken symptoms
 
-Database: Firebase Firestore (NoSQL)
+Auto-selects them in the checklist
 
-Authentication: Firebase Authentication
+📄 Lab Report AI Analysis
 
-Report Export: html2canvas (For rendering DOM elements to downloadable PNGs)
+Upload a PDF lab report and Med-AI will:
 
-📸 Application Flow
-Onboarding: User registers, verifies their email, and fills out their physical demographics.
+Extract medical values
 
-Dashboard: User lands on the tailored home screen featuring their calculated BMI and recent assessment history.
+Identify abnormal parameters
 
-Assessment: User clicks "Start Assessment", searches/filters their active symptoms, and hits "Analyze".
+Generate simplified medical explanations
 
-Processing: The frontend sends the symptom array to the Render backend, triggering the ML model.
+Suggest next steps
 
-Results & Export: The UI beautifully cascades the Top 3 predictions. The user can then click "Download Image" to save a clinical snapshot of the results.
+📊 Health Dashboard
+
+The dashboard displays:
+
+BMI analysis with dynamic gauge
+
+Recent medical activity
+
+Quick access to symptom assessment
+
+Lab report upload
+
+🧾 Medical History Tracking
+
+Stores:
+
+Symptom assessments
+
+AI predictions
+
+Lab report analyses
+
+Users can revisit previous reports anytime.
+
+👤 Health Profile Management
+
+Users can manage:
+
+Name
+
+Age
+
+Height & Weight
+
+Gender
+
+Location
+
+Profile photo
+
+BMI is automatically calculated based on profile data.
+
+🌙 Dark Mode Support
+
+The application supports a fully responsive light and dark theme.
+
+📱 Mobile-First UI
+
+The interface is optimized for:
+
+Smartphones
+
+Tablets
+
+Desktop browsers
+
+🏗️ Tech Stack
+Frontend
+
+React
+
+Vite
+
+Firebase Authentication
+
+Firestore
+
+HTML2Canvas
+
+Web Speech API
+
+Backend
+
+FastAPI
+
+Python
+
+Machine Learning Model (Disease Prediction)
+
+Google Generative AI
+
+PDF Processing
+
+Database
+
+Firebase Firestore
+
+Deployment
+
+Vercel (Frontend)
+
+Render (Backend)
+
+📂 Project Architecture
+
+Frontend
+
+React (Vite)
+│
+├── Authentication
+├── Symptom Selection UI
+├── Voice Recognition
+├── Lab Report Upload
+├── Medical Dashboard
+└── History Tracking
+
+Backend
+
+FastAPI
+│
+├── /predict           → Disease prediction
+├── /symptoms          → Symptom list API
+├── /parse-report      → Lab report AI analysis
+└── /health            → API health check
+⚙️ Installation
+1️⃣ Clone Repository
+git clone https://github.com/yourusername/med-ai.git
+cd med-ai
+2️⃣ Install Frontend Dependencies
+npm install
+3️⃣ Environment Variables
+
+Create a .env file.
+
+VITE_API_URL=your_backend_url
+
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+4️⃣ Start Development Server
+npm run dev
+🧠 AI Capabilities
+
+Med-AI integrates AI for:
+
+Disease prediction using machine learning
+
+Medical report interpretation
+
+Natural language explanations
+
+Voice-based symptom input
+
+This enables a fast preliminary health assessment system.
+
+⚠️ Disclaimer
+
+Med-AI is designed for educational and informational purposes only.
+
+It does not replace professional medical diagnosis.
+Users should always consult a qualified healthcare professional.
+
+📈 Future Improvements
+
+Multi-language voice support
+
+Doctor consultation integration
+
+WhatsApp triage assistant
+
+Wearable device health data integration
+
+Advanced ML disease prediction model
