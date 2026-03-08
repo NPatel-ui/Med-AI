@@ -1610,7 +1610,8 @@ if (labSnap.exists()) {
         )}
 
         {/* --- BOTTOM NAVIGATION --- */}
-        {isLoggedIn && screen !== "login" && screen !== "loading" && screen !== "symptoms" && screen !== "results" && !viewingHistoryItem && (
+      
+{isLoggedIn && screen !== "login" && screen !== "loading" && screen !== "results" && !viewingHistoryItem && (
           <nav className="bottom-nav">
             <div className={`nav-item ${screen === "home" ? "active" : ""}`} onClick={() => setScreen("home")}>
   <Icons.Home size={24} color={screen === "home" ? "var(--primary-teal)" : "var(--text-muted)"} />
@@ -2170,6 +2171,38 @@ select option {
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 4px 10px rgba(0, 77, 64, 0.2);
+}
+
+.sticky-action-bar { 
+  position: fixed; 
+  /* Push it above the 80px high bottom navigation bar */
+  bottom: 95px; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  width: 92%; 
+  max-width: 400px; 
+  background: var(--primary-teal); 
+  border-radius: 20px; 
+  padding: 12px 16px; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+  z-index: 100; 
+  transition: 0.3s ease;
+}
+
+/* Ensure the symptoms list doesn't get cut off behind the two bars */
+.symptoms-list {
+  padding-bottom: 200px !important;
+}
+
+/* Keep the Analyze bar at the bottom on Desktop (since bottom-nav is hidden there) */
+@media (min-width: 768px) {
+  .sticky-action-bar {
+    bottom: 30px;
+    left: calc(50% + 140px);
+  }
 }
 
 .btn-premium-teal:hover {
