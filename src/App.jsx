@@ -780,23 +780,21 @@ if (labSnap.exists()) {
                     </div>
                   </div>
 
-                  {/* --- NEW: GENDER DROPDOWN ADDED HERE --- */}
                   <div className="form-group-1 mt-3">
-                    <label className="input-label">Gender</label>
-                    <select 
-                      required 
-                      name="gender" 
-                      value={userProfile.gender} 
-                      onChange={handleProfileChange} 
-                      className="light-input"
-                      style={{ appearance: 'none', cursor: 'pointer' }}
-                    >
-                      <option value="" disabled>Select Gender</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="prefer_not_to_say">Prefer not to say</option>
-                    </select>
-                  </div>
+  <label className="input-label">Gender</label>
+  <select 
+    required 
+    name="gender" 
+    value={userProfile.gender} 
+    onChange={handleProfileChange} 
+    className="light-input"
+  >
+    <option value="" disabled>Select Gender</option>
+    <option value="male">Male</option>
+    <option value="female">Female</option>
+    <option value="prefer_not_to_say">Prefer not to say</option>
+  </select>
+</div>
 
                   <div className="form-group-2 mt-3">
                     <div>
@@ -1240,13 +1238,25 @@ if (labSnap.exists()) {
                     </div>
 
                     <div className="detail-group">
-                      <label className="detail-label-modern">Gender</label>
-                      {isEditingProfile ? (
-                        <input type="text" name="gender" value={userProfile.gender || ''} onChange={handleProfileChange} className="light-input" placeholder="Male/Female" />
-                      ) : (
-                        <div className="detail-value-modern" style={{textTransform: 'capitalize'}}>{userProfile.gender || '--'}</div>
-                      )}
-                    </div>
+  <label className="detail-label-modern">Gender</label>
+  {isEditingProfile ? (
+    <select 
+      name="gender" 
+      value={userProfile.gender || ''} 
+      onChange={handleProfileChange} 
+      className="light-input"
+    >
+      <option value="" disabled>Select Gender</option>
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+      <option value="prefer_not_to_say">Prefer not to say</option>
+    </select>
+  ) : (
+    <div className="detail-value-modern" style={{ textTransform: 'capitalize' }}>
+      {userProfile.gender ? userProfile.gender.replace(/_/g, ' ') : '--'}
+    </div>
+  )}
+</div>
 
                     <div className="detail-group">
                       <label className="detail-label-modern">Height</label>
@@ -2028,6 +2038,37 @@ body { margin: 0; background-color: var(--bg-main); font-family: 'Plus Jakarta S
 .symptom-name { font-size: 1.05rem; font-weight: 600; color: var(--text-dark); text-transform: capitalize; }
 .checkbox-square { width: 24px; height: 24px; border-radius: 6px; border: 2px solid var(--border-light); display: flex; align-items: center; justify-content: center; color: white; transition: 0.2s; background: white; }
 .checkbox-square.checked { background: var(--primary-teal); border-color: var(--primary-teal); }
+
+/* --- BULLETPROOF MOBILE DROPDOWN --- */
+select.light-input {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  /* This adds the arrow icon back manually */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 16px !important;
+  background-color: var(--white) !important;
+  padding-right: 40px !important;
+  cursor: pointer !important;
+}
+
+/* Ensure the arrow turns white in Dark Mode */
+.dark select.light-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23F8FAFC' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+}
+
+/* Fix for Android/iOS text visibility in dark mode */
+select option {
+  background-color: white;
+  color: #1F2937;
+}
+
+.dark select option {
+  background-color: #1E293B;
+  color: #F8FAFC;
+}
 
 .sticky-action-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: var(--primary-teal); border-radius: 16px; padding: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 100; transition: 0.3s ease;}
 .btn-cancel { background: transparent; color: white; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; padding: 8px; }
