@@ -2475,6 +2475,37 @@ body { margin: 0; background-color: var(--bg-main); font-family: 'Plus Jakarta S
   }
 }
 
+/* --- CUSTOM DROPDOWN ARROW FOR MOBILE & DESKTOP --- */
+select.light-input {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 16px center !important;
+  background-size: 18px !important;
+  padding-right: 45px !important;
+  cursor: pointer;
+}
+
+/* Dark Mode Arrow Color (White) */
+.dark select.light-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23F8FAFC' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-color: var(--white) !important;
+  color: var(--text-dark) !important;
+}
+
+/* Fix for mobile selection overlay color in dark mode */
+select option {
+  background-color: white;
+  color: black;
+}
+
+.dark select option {
+  background-color: #1E293B;
+  color: white;
+}
+
 /* 9. Dark Mode Refinement for Mobile */
 .dark .white-card {
   background: #1E293B !important;
