@@ -64,6 +64,9 @@ export default function App() {
   const [screen,          setScreen]          = useState("login");
   const [isSidebarOpen,   setIsSidebarOpen]   = useState(false);
   const [theme,           setTheme]           = useState(localStorage.getItem("theme") || "light");
+  // ── Loading States ────────────────────────────────────────────────────────
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
 
   // ── Auth State ────────────────────────────────────────────────────────────
   const [isLoggedIn,      setIsLoggedIn]      = useState(false);
@@ -745,6 +748,45 @@ export default function App() {
               handleForgotPassword={handleForgotPassword}
             />
           )}
+
+          {/* ── AUTH LOADING (Full Screen Transition) ────────────────────── */}
+              {screen === "login" && isAuthLoading && (
+                <motion.div
+                  key="auth-loading"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.05 }}
+                  transition={{ duration: 0.4, ease: "easeInOut" }}
+                  className="flex flex-col items-center justify-center flex-1 min-h-screen p-6 text-center bg-slate-50 dark:bg-slate-950"
+                >
+                  <motion.div
+                    animate={{ 
+                      scale: [1, 1.15, 1],
+                      boxShadow: [
+                        "0px 0px 0px 0px rgba(16, 185, 129, 0)",
+                        "0px 0px 40px 10px rgba(16, 185, 129, 0.4)",
+                        "0px 0px 0px 0px rgba(16, 185, 129, 0)"
+                      ]
+                    }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="flex items-center justify-center w-28 h-28 mb-8 rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-600"
+                  >
+                    <Icons.MedLogo size={48} className="text-white" />
+                  </motion.div>
+                  
+                  <motion.h3
+                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white"
+                  >
+                    {isNewUser ? "Creating Profile..." : "Authenticating..."}
+                  </motion.h3>
+                  <p className="max-w-sm mt-3 font-medium text-slate-500 dark:text-slate-400">
+                    Establishing a secure connection to your health dashboard.
+                  </p>
+                </motion.div>
+              )}
+
 
           {/* ── DASHBOARD ───────────────────────────────────────────────── */}
           {screen === "home" && (
