@@ -260,12 +260,13 @@ const handleProfileChange = (e) => {
     const { name, value } = e.target;
     let val = value;
 
-    // 1. Name: Remove all numbers and special characters immediately
-    if (name === "name") {
+    // 1. STRICT TEXT-ONLY: Applies to Name, City, and State
+    if (name === "name" || name === "city" || name === "state") {
+      // This regex removes anything that isn't a letter (a-z) or a space
       val = val.replace(/[^a-zA-Z\s]/g, ""); 
     }
 
-    // 2. Phone: Only allow numbers and limit to exactly 10 digits
+    // 2. STRICT PHONE: Only numbers, max 10 digits
     if (name === "phone") {
       val = val.replace(/\D/g, "").slice(0, 10);
     }
@@ -283,7 +284,6 @@ const handleProfileChange = (e) => {
 
     setUserProfile((prev) => ({ ...prev, [name]: val }));
   };
-
   const handleLoginChange = (e) => {
     const { name, value } = e.target;
     let val = value;
@@ -388,14 +388,19 @@ const handleProfileChange = (e) => {
   };
 
   
-  const handleLogout = async () => {
+ const handleLogout = async () => {
     try {
       await signOut(auth);
-      setHistory([]);
-      setIsSidebarOpen(false);
+      // Reset profile to empty strings
+      setUserProfile({
+        name: "", age: "", weight: "", height: "", gender: "",
+        email: "", phone: "", city: "", state: "", country: "",
+        photo: "", password: "",
+      });
+      setLoginData({ email: "", password: "" });
+      setScreen("login");
     } catch (err) { console.error(err); }
   };
-
   const handleForgotPassword = async () => {
     setError(null);
     if (!loginData.email) { setError("Please enter your email first."); return; }
