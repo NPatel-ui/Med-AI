@@ -284,40 +284,14 @@ const handleProfileChange = (e) => {
     setUserProfile((prev) => ({ ...prev, [name]: val }));
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    if (!loginData.email || !loginData.password) {
-      setError("Please enter your email and password.");
-      return;
+  const handleLoginChange = (e) => {
+    const { name, value } = e.target;
+    let val = value;
+    if (name === "email") {
+      const comIndex = val.toLowerCase().indexOf(".com");
+      if (comIndex !== -1) val = val.slice(0, comIndex + 4);
     }
-    
-    setIsAuthLoading(true);
-    
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, loginData.email, loginData.password);
-      const user = userCredential.user;
-
-      // CHECK VERIFICATION BEFORE ANYTHING ELSE
-      if (!user.emailVerified) {
-        // Send a fresh link in case they missed the first one
-        await sendEmailVerification(user);
-        setError("Email not verified. A new verification link has been sent to your inbox.");
-        await signOut(auth); // Kick them out immediately
-        setIsAuthLoading(false);
-        return; 
-      }
-
-      // ONLY IF VERIFIED
-      setNotification("Login successful! Welcome back.");
-    } catch (err) {
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        setError("Incorrect email or password. Please try again.");
-      } else {
-        setError("Login Error: " + err.message);
-      }
-    } finally {
-      setIsAuthLoading(false);
-    }
+    setLoginData((prev) => ({ ...prev, [name]: val }));
   };
 
   const handlePhotoUpload = (e) => {
@@ -341,18 +315,35 @@ const handleProfileChange = (e) => {
       setError("Please enter your email and password.");
       return;
     }
+    
+    setIsAuthLoading(true);
+    
     try {
-      await signInWithEmailAndPassword(auth, loginData.email, loginData.password);
+      const userCredential = await signInWithEmailAndPassword(auth, loginData.email, loginData.password);
+      const user = userCredential.user;
+
+      // Check if email is verified
+      if (!user.emailVerified) {
+        // Send a fresh link
+        await sendEmailVerification(user);
+        setError("Email not verified. A new verification link has been sent to your inbox.");
+        await signOut(auth); // Log them out immediately
+        setIsAuthLoading(false);
+        return; 
+      }
+
       setNotification("Login successful! Welcome back.");
+      setScreen("home"); // Navigate to dashboard
     } catch (err) {
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
         setError("Incorrect email or password. Please try again.");
       } else {
         setError("Login Error: " + err.message);
       }
+    } finally {
+      setIsAuthLoading(false);
     }
   };
-
   const handleRegister = async (e) => {
     e.preventDefault();
 
