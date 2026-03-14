@@ -14,7 +14,7 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 
 // ── CSS & Screen imports ──────────────────────────────────────────────────────
@@ -293,20 +293,20 @@ export default function App() {
 
   
   
-  const handleLogin = async (e) => {
+ const handleLogin = async (e) => {
     e.preventDefault();
     if (!loginData.email || !loginData.password) {
-      alert("Please enter your email and password.");
+      setError("Please enter your email and password.");
       return;
     }
     try {
-      // Just log into Firebase. Your existing onAuthStateChanged useEffect will instantly detect this and route them to the dashboard!
       await signInWithEmailAndPassword(auth, loginData.email, loginData.password);
-    } catch (error) {
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        alert("Incorrect email or password. Please try again.");
+      setNotification("Login successful! Welcome back.");
+    } catch (err) {
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError("Incorrect email or password. Please try again.");
       } else {
-        alert("Login Error: " + error.message);
+        setError("Login Error: " + err.message);
       }
     }
   };
@@ -314,38 +314,34 @@ export default function App() {
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    // Standard Validation
     if (!userProfile.name || !userProfile.email || !userProfile.password || !userProfile.phone || !userProfile.city || !userProfile.state) {
-      alert("Please fill in all general information fields."); return;
+      setError("Please fill in all general information fields."); return;
     }
     if (userProfile.password !== confirmPassword) {
-      alert("Passwords do not match!"); return;
+      setError("Passwords do not match!"); return;
     }
     if (!userProfile.age || !userProfile.gender || !userProfile.height || !userProfile.weight) {
-      alert("Please provide all clinical vitals (Age, Gender, Height, Weight)."); return;
+      setError("Please provide all clinical vitals."); return;
     }
 
     try {
-      // Default the role to 'user' for the backend
       const payload = { ...userProfile, role: "user" };
-
-      const response = await fetch("http://127.0.0.1:8000/auth/register", {
+      const response = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-
       const data = await response.json();
 
       if (response.ok) {
-        alert("Registration Successful! Please sign in.");
+        setNotification("Registration Successful! Please sign in.");
         setIsNewUser(false); 
       } else {
-        alert(data.detail || "Registration failed. Email might already be in use.");
+        setError(data.detail || "Registration failed. Email might already be in use.");
       }
-    } catch (error) {
-      console.error("Registration Error:", error);
-      alert("Could not connect to the server.");
+    } catch (err) {
+      console.error("Registration Error:", err);
+      setError("Could not connect to the server.");
     }
   };
 
@@ -678,10 +674,41 @@ export default function App() {
   return (
     <div className={`med-ai-root ${theme}`}>
 
-      {/* ── Toast Notifications ──────────────────────────────────────────── */}
-      <div className="toast-wrap">
-        {notification && <div className="toast success">{notification}</div>}
-        {error         && <div className="toast error">{error}</div>}
+    {/* ── Animated Toast Notifications ───────────────────────────────── */}
+      <div className="fixed top-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none">
+        <AnimatePresence>
+          {notification && (
+            <motion.div
+              initial={{ opacity: 0, x: 50, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 20, scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              className="flex items-center gap-3 px-5 py-4 font-bold text-white shadow-2xl pointer-events-auto bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl"
+            >
+              <Icons.MedLogo size={20} className="text-white drop-shadow-md" />
+              {notification}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, x: 50, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 20, scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              className="flex items-center gap-3 px-5 py-4 font-bold text-white shadow-2xl pointer-events-auto bg-gradient-to-r from-red-500 to-rose-600 rounded-2xl"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+              {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className="app-layout">
