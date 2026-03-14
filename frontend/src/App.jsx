@@ -64,9 +64,6 @@ export default function App() {
   const [screen,          setScreen]          = useState("login");
   const [isSidebarOpen,   setIsSidebarOpen]   = useState(false);
   const [theme,           setTheme]           = useState(localStorage.getItem("theme") || "light");
-  // ── Loading States ────────────────────────────────────────────────────────
-  const [isAuthLoading, setIsAuthLoading] = useState(false);
-  const [isProfileLoading, setIsProfileLoading] = useState(false);
 
   // ── Auth State ────────────────────────────────────────────────────────────
   const [isLoggedIn,      setIsLoggedIn]      = useState(false);
@@ -85,6 +82,9 @@ export default function App() {
   const [isChangingPassword,setIsChangingPassword] = useState(false);
   const [passwordData,      setPasswordData]       = useState({ current: "", new: "", confirm: "" });
   const [showProfilePasswords, setShowProfilePasswords] = useState({ current: false, new: false, confirm: false });
+  // ── Loading States ────────────────────────────────────────────────────────
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
 
   // ── Symptom / Assessment State ────────────────────────────────────────────
   const [symptoms,         setSymptoms]         = useState([]);
@@ -256,18 +256,31 @@ export default function App() {
   // Input Handlers
   // ─────────────────────────────────────────────────────────────────────────
 
-  const handleProfileChange = (e) => {
+const handleProfileChange = (e) => {
     const { name, value } = e.target;
     let val = value;
-    if (name === "name")  val = val.replace(/\d/g, "");
-    if (name === "phone") val = val.replace(/\D/g, "").slice(0, 10);
+
+    // 1. Name: Remove all numbers and special characters immediately
+    if (name === "name") {
+      val = val.replace(/[^a-zA-Z\s]/g, ""); 
+    }
+
+    // 2. Phone: Only allow numbers and limit to exactly 10 digits
+    if (name === "phone") {
+      val = val.replace(/\D/g, "").slice(0, 10);
+    }
+
+    // 3. Email: Auto-cap at .com (Existing logic)
     if (name === "email") {
       const comIndex = val.toLowerCase().indexOf(".com");
       if (comIndex !== -1) val = val.slice(0, comIndex + 4);
     }
-    if (name === "age"    && val !== "" && Number(val) > 120) return;
+
+    // 4. Numerical Vitals: Prevent unrealistic numbers
+    if (name === "age" && val !== "" && Number(val) > 120) return;
     if (name === "height" && val !== "" && Number(val) > 250) return;
     if (name === "weight" && val !== "" && Number(val) > 250) return;
+
     setUserProfile((prev) => ({ ...prev, [name]: val }));
   };
 
@@ -296,7 +309,7 @@ export default function App() {
 
   
   
- const handleLogin = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     if (!loginData.email || !loginData.password) {
       setError("Please enter your email and password.");
@@ -335,9 +348,18 @@ export default function App() {
         body: JSON.stringify(payload)
       });
       const data = await response.json();
+      
 
       if (response.ok) {
-        setNotification("Registration Successful! Please sign in.");
+        // --- NEW CODE: SEND THE VERIFICATION LINK ---
+        if (auth.currentUser) {
+          await sendEmailVerification(auth.currentUser);
+          setNotification("Registration Successful! Verification email sent. Please check your inbox before logging in.");
+        } else {
+          setNotification("Account created! Please log in to receive your verification link.");
+        }
+        // --------------------------------------------
+        
         setIsNewUser(false); 
       } else {
         setError(data.detail || "Registration failed. Email might already be in use.");
@@ -677,7 +699,7 @@ export default function App() {
   return (
     <div className={`med-ai-root ${theme}`}>
 
-    {/* ── Animated Toast Notifications ───────────────────────────────── */}
+      {/* ── Animated Toast Notifications ───────────────────────────────── */}
       <div className="fixed top-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none">
         <AnimatePresence>
           {notification && (
@@ -732,24 +754,24 @@ export default function App() {
         <div className="main-panel">
 
           {/* ── AUTH ─────────────────────────────────────────────────────── */}
-          {screen === "login" && (
-            <AuthScreen
-              isNewUser={isNewUser}
-              setIsNewUser={setIsNewUser}
-              userProfile={userProfile}
-              handleProfileChange={handleProfileChange}
-              handlePhotoUpload={handlePhotoUpload}
-              loginData={loginData}
-              handleLoginChange={handleLoginChange}
-              confirmPassword={confirmPassword}
-              setConfirmPassword={setConfirmPassword}
-              handleLogin={handleLogin}
-              handleRegister={handleRegister}
-              handleForgotPassword={handleForgotPassword}
-            />
-          )}
+              {screen === "login" && !isAuthLoading && (
+                <AuthScreen
+                  isNewUser={isNewUser}
+                  setIsNewUser={setIsNewUser}
+                  userProfile={userProfile}
+                  handleProfileChange={handleProfileChange}
+                  handlePhotoUpload={handlePhotoUpload}
+                  loginData={loginData}
+                  handleLoginChange={handleLoginChange}
+                  confirmPassword={confirmPassword}
+                  setConfirmPassword={setConfirmPassword}
+                  handleLogin={handleLogin}
+                  handleRegister={handleRegister}
+                  handleForgotPassword={handleForgotPassword}
+                />
+              )}
 
-          {/* ── AUTH LOADING (Full Screen Transition) ────────────────────── */}
+              {/* ── AUTH LOADING (Full Screen Transition) ────────────────────── */}
               {screen === "login" && isAuthLoading && (
                 <motion.div
                   key="auth-loading"
@@ -786,7 +808,6 @@ export default function App() {
                   </p>
                 </motion.div>
               )}
-
 
           {/* ── DASHBOARD ───────────────────────────────────────────────── */}
           {screen === "home" && (
