@@ -231,10 +231,16 @@ def generate_precaution_text(tags: List[str]) -> str:
     if not gemini_model:
         return static_message
 
-    prompt = f"Provide a calm, professional guidance for these symptoms/conditions: {', '.join(tags).replace('_', ' ')}. Include practical tips like hydration or rest. Reassure the patient."
+    prompt = f"""
+    You are a health information assistant providing general wellness educational guidance. 
+    Based on the following tags: {', '.join(tags)}, provide a brief, supportive summary of general wellness steps.
+    Use clear bullet points for any suggestions. 
+    IMPORTANT: End the response with 'Please consult a healthcare professional for specific medical advice.'
+    Do not use diagnostic language.
+    """
 
     try:
-        # Define safety settings to prevent mid-sentence cut-offs
+        # This tells Gemini: "Don't stop talking just because it's a health topic"
         safety_settings = [
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
@@ -245,21 +251,20 @@ def generate_precaution_text(tags: List[str]) -> str:
         response = gemini_model.generate_content(
             prompt,
             generation_config={
-                "temperature": 0.7, 
-                "max_output_tokens": 500,
-                "top_p": 0.95,
+                "temperature": 0.4, # Lower temperature = more stable, less "chatty"
+                "max_output_tokens": 800,
             },
-            safety_settings=safety_settings # <--- ADD THIS LINE
+            safety_settings=safety_settings
         )
         
-        # Add a check to see if the response was actually blocked
-        if not response.text:
-            print("⚠️ Gemini response was empty or blocked by safety filters.")
+        # Check if the response was actually generated
+        if response.candidates and response.candidates[0].content.parts:
+            return response.text.strip()
+        else:
             return static_message
-            
-        return response.text.strip()
+
     except Exception as e:
-        print("⚠️ Gemini error:", e)
+        print(f"⚠️ Gemini Error: {e}")
         return static_message
 # ================= AUTH ENDPOINTS =================
 
