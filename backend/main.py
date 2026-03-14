@@ -231,18 +231,36 @@ def generate_precaution_text(tags: List[str]) -> str:
     if not gemini_model:
         return static_message
 
-    prompt = f"Convert these precaution tags into calm, human-friendly guidance (max 2 sentences): {', '.join(tags)}"
+    prompt = f"Provide a calm, professional guidance for these symptoms/conditions: {', '.join(tags).replace('_', ' ')}. Include practical tips like hydration or rest. Reassure the patient."
 
     try:
+        # Define safety settings to prevent mid-sentence cut-offs
+        safety_settings = [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ]
+
         response = gemini_model.generate_content(
             prompt,
-            generation_config={"temperature": 0.6, "max_output_tokens": 120}
+            generation_config={
+                "temperature": 0.7, 
+                "max_output_tokens": 500,
+                "top_p": 0.95,
+            },
+            safety_settings=safety_settings # <--- ADD THIS LINE
         )
-        return response.text.strip() if response.text else static_message
+        
+        # Add a check to see if the response was actually blocked
+        if not response.text:
+            print("⚠️ Gemini response was empty or blocked by safety filters.")
+            return static_message
+            
+        return response.text.strip()
     except Exception as e:
         print("⚠️ Gemini error:", e)
         return static_message
-
 # ================= AUTH ENDPOINTS =================
 
 @app.post("/auth/send-otp")
