@@ -1,9 +1,10 @@
 fastapi
-uvicorn
+uvicorn[standard]
 pydantic
-numpy
-pandas
-scikit-learn
+python-dotenv
+google-generativeai
+firebase-admin
 joblib
-python-multipart
+scikit-learn
 PyPDF2
+python-multipart
