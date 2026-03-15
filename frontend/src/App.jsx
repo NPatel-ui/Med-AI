@@ -344,49 +344,60 @@ const handleProfileChange = (e) => {
       setIsAuthLoading(false);
     }
   };
-  const handleRegister = async (e) => {
-    e.preventDefault();
+  
 
-    if (!userProfile.name || !userProfile.email || !userProfile.password || !userProfile.phone || !userProfile.city || !userProfile.state) {
-      setError("Please fill in all general information fields."); return;
-    }
-    if (userProfile.password !== confirmPassword) {
-      setError("Passwords do not match!"); return;
-    }
-    if (!userProfile.age || !userProfile.gender || !userProfile.height || !userProfile.weight) {
-      setError("Please provide all clinical vitals."); return;
-    }
+const handleRegister = async (e) => {
+  e.preventDefault();
 
-    try {
-      const payload = { ...userProfile, role: "user" };
-      const response = await fetch(`${API_BASE}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-      
+  if (!userProfile.name || !userProfile.email || !userProfile.password) {
+    setError("Please fill all required fields.");
+    return;
+  }
 
-      if (response.ok) {
-        // --- NEW CODE: SEND THE VERIFICATION LINK ---
-        if (auth.currentUser) {
-          await sendEmailVerification(auth.currentUser);
-          setNotification("Registration Successful! Verification email sent. Please check your inbox before logging in.");
-        } else {
-          setNotification("Account created! Please log in to receive your verification link.");
-        }
-        // --------------------------------------------
-        
-        setIsNewUser(false); 
-      } else {
-        setError(data.detail || "Registration failed. Email might already be in use.");
-      }
-    } catch (err) {
-      console.error("Registration Error:", err);
-      setError("Could not connect to the server.");
-    }
-  };
+  if (userProfile.password !== confirmPassword) {
+    setError("Passwords do not match!");
+    return;
+  }
 
+  try {
+
+    // STEP 1 — Create Firebase user
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      userProfile.email,
+      userProfile.password
+    );
+
+    const user = userCredential.user;
+
+    // STEP 2 — Send verification email
+    await sendEmailVerification(user);
+
+    // STEP 3 — Send profile data to backend
+    const payload = {
+      ...userProfile,
+      role: "user"
+    };
+
+    await fetch(`${API_BASE}/auth/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    setNotification(
+      "Account created! Verification email sent. Please check your inbox."
+    );
+
+    setIsNewUser(false);
+
+  } catch (err) {
+    console.error("Registration Error:", err);
+    setError(err.message);
+  }
+};
   
  const handleLogout = async () => {
     try {
